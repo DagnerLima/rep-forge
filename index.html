@@ -11,6 +11,8 @@
 <link rel="apple-touch-icon" href="icon-512.png">
 <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22RepForge%22%2C%22short_name%22%3A%22RepForge%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22minimal-ui%22%2C%22background_color%22%3A%22%230a0a0f%22%2C%22theme_color%22%3A%22%230a0a0f%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22icon-512.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>window._sb=window.supabase.createClient('https://seekddfmpgipejdabhqt.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlZWtkZGZtcGdpcGVqZGFiaHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3OTQ1MTUsImV4cCI6MjA5NjM3MDUxNX0.mBKscqvWYoYhESc9L1kHsWFbXRr2StDKSIxBJsYmt_g');</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body,#root{min-height:100vh;min-height:100dvh}
@@ -30,7 +32,8 @@ input,select{font-family:inherit}
     const urls=[
       'https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js',
       'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.9/babel.min.js'];
+      'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.9/babel.min.js',
+      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js'];
     for(const u of urls){try{const r=await fetch(u);if(r.ok)await c.put(u,r)}catch{}}
   }catch{}
   if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
@@ -44,6 +47,7 @@ input,select{font-family:inherit}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.9/babel.min.js"></script>
 <script type="text/babel" data-type="module">
 const{useState,useEffect,useCallback,useRef,useMemo,createContext,useContext}=React;
+const supabase=window._sb;
 
 const themes={
   light:{bg:"#f8f9fa",card:"#fff",cardAlt:"#f1f3f4",border:"#e8eaed",text:"#1f1f1f",textSec:"#5f6368",textTer:"#9aa0a6",accent:"#4285f4",accentBg:"#e8f0fe",accentDark:"#1a73e8",green:"#34a853",greenBg:"#e8f5e9",greenBorder:"#c8e6c9",red:"#ea4335",redBg:"#fce8e6",yellow:"#fbbc04",yellowBg:"rgba(251,188,4,.12)",overlay:"rgba(0,0,0,.5)",timerBg:"rgba(248,249,250,.97)",timerCircle:"#f8f9fa",gradBot:"#f8f9fa",inputBg:"#fff"},
@@ -130,6 +134,9 @@ function saveBackup(state){try{const backups=JSON.parse(localStorage.getItem(BAC
 function getBackups(){try{return JSON.parse(localStorage.getItem(BACKUP_KEY)||"[]")}catch{return[]}}
 function restoreBackup(idx){try{const backups=getBackups();if(backups[idx])return backups[idx].data}catch{}return null}
 
+async function sbSave(state){try{const{data:{user}}=await supabase.auth.getUser();if(!user)return;await supabase.from('user_state').upsert({id:user.id,state,updated_at:new Date().toISOString()})}catch{}}
+async function sbLoad(){try{const{data,error}=await supabase.from('user_state').select('state').single();if(!error&&data?.state)return migrateRests(JSON.parse(JSON.stringify(data.state)))}catch{}return null}
+
 function buildSessions(td,total){const w={};Object.keys(td).forEach(k=>{w[k]={cur:0,sessions:Array.from({length:total},()=>({status:null,exercises:td[k].exercises.map(e=>({weight:e.initWeight,sets:Array(e.sets).fill(false)}))}))};});return w}
 function sortOrder(td){return Object.keys(td).sort((a,b)=>(td[a].dayOfWeek||0)-(td[b].dayOfWeek||0))}
 
@@ -168,6 +175,7 @@ const IC={
   chart:"M18 20V10|M12 20V4|M6 20v-6",
   zap:"M13 2L3 14h9l-1 8 10-12h-9l1-8z",
   layers:"M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5",
+  logout:"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4|M16 17l5-5-5-5|M21 12H9",
 };
 
 // No notification needed — wake lock + tap anywhere
@@ -964,7 +972,7 @@ function WeeklySummary({state,onClose}){
 }
 
 
-function App(){
+function App({session}){
   const[state,setState]=useState(init);
   const[active,setActive]=useState(null);const[timer,setTimer]=useState(null);const[timerOrigin,setTimerOrigin]=useState(null);
   const[view,setView]=useState("home");const[hd,setHd]=useState(null);
@@ -980,6 +988,7 @@ function App(){
   const[showChart,setShowChart]=useState(null);// workout name or null
   const[showSummary,setShowSummary]=useState(false);
   const[showBackups,setShowBackups]=useState(false);
+  const sbTimerRef=useRef(null);
 
   // Keep screen on during workout
   useWakeLock(view==="workout");
@@ -1051,7 +1060,8 @@ function App(){
   };
 
   const dark=state.dark;const t=dark?themes.dark:themes.light;
-  useEffect(()=>{sv(state)},[state]);
+  useEffect(()=>{sv(state);clearTimeout(sbTimerRef.current);sbTimerRef.current=setTimeout(()=>sbSave(state),2000)},[state]);
+  useEffect(()=>{sbLoad().then(r=>{if(r&&r.v===7)setState(r)})},[]);
 
   // Compensate missed days: extend endDate when a planned day passes without workout
   useEffect(()=>{
@@ -1194,6 +1204,7 @@ function App(){
             <h1 style={{fontSize:28,fontWeight:800,letterSpacing:-.5,color:t.text}}><span style={{color:t.accent}}>Rep</span><span>Forge</span></h1>
             <div style={{display:"flex",gap:6}}>
               <button onClick={()=>setState(p=>({...p,dark:!p.dark}))} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={dark?IC.sun:IC.moon} s={18} c={t.textSec}/></button>
+              <button onClick={()=>supabase.auth.signOut()} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}} title="Sair"><I d={IC.logout} s={18} c={t.textSec}/></button>
               <button onClick={()=>setShowSummary(true)} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.layers} s={18} c={t.textSec}/></button>
               <button onClick={()=>setShowPlan(true)} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.calendar} s={18} c={t.textSec}/></button>
               <button onClick={()=>setView("history")} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.history} s={18} c={t.textSec}/></button>
@@ -1530,7 +1541,78 @@ function App(){
   return null;
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+function LoginScreen(){
+  const dark=window.matchMedia?.("(prefers-color-scheme:dark)").matches||false;
+  const t=dark?themes.dark:themes.light;
+  const[loading,setLoading]=useState(false);
+  const[email,setEmail]=useState("");
+  const[sent,setSent]=useState(false);
+  const[err,setErr]=useState("");
+  const[showEmail,setShowEmail]=useState(false);
+  useEffect(()=>{document.body.style.background=t.bg;document.body.style.color=t.text},[]);
+  const loginGoogle=async()=>{
+    setLoading(true);setErr("");
+    const{error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.href}});
+    if(error){setErr(error.message);setLoading(false);}
+  };
+  const loginEmail=async()=>{
+    if(!email.trim())return;
+    setLoading(true);setErr("");
+    const{error}=await supabase.auth.signInWithOtp({email:email.trim(),options:{emailRedirectTo:window.location.href}});
+    setLoading(false);
+    if(error)setErr(error.message);else setSent(true);
+  };
+  return(
+    <div style={{minHeight:"100dvh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:t.bg,padding:"0 24px"}}>
+      <div style={{width:"100%",maxWidth:360,textAlign:"center"}}>
+        <h1 style={{fontSize:40,fontWeight:800,letterSpacing:-.5,color:t.text,marginBottom:6}}><span style={{color:t.accent}}>Rep</span>Forge</h1>
+        <p style={{fontSize:14,color:t.textSec,marginBottom:48}}>Tracking de treino</p>
+        {sent?(
+          <div style={{background:t.accentBg,borderRadius:20,padding:24}}>
+            <div style={{fontSize:16,fontWeight:600,color:t.accent,marginBottom:8}}>Link enviado!</div>
+            <div style={{fontSize:13,color:t.textSec}}>Verifique seu email <b style={{color:t.text}}>{email}</b> e clique no link para entrar.</div>
+          </div>
+        ):(
+          <>
+            <button onClick={loginGoogle} disabled={loading} style={{width:"100%",padding:"14px 20px",borderRadius:16,background:t.card,border:`1px solid ${t.border}`,color:t.text,fontSize:15,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:12,marginBottom:12,cursor:"pointer",opacity:loading?.7:1}}>
+              <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+              Entrar com Google
+            </button>
+            {!showEmail?(
+              <button onClick={()=>setShowEmail(true)} style={{width:"100%",padding:"14px 20px",borderRadius:16,background:"transparent",border:`1px solid ${t.border}`,color:t.textSec,fontSize:14,fontWeight:500,cursor:"pointer"}}>Entrar com email</button>
+            ):(
+              <div>
+                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&loginEmail()} placeholder="seu@email.com" autoFocus style={{width:"100%",padding:"14px 16px",borderRadius:14,border:`1px solid ${t.border}`,background:t.inputBg,color:t.text,fontSize:15,outline:"none",marginBottom:10,boxSizing:"border-box"}}/>
+                <button onClick={loginEmail} disabled={loading||!email.trim()} style={{width:"100%",padding:"14px 20px",borderRadius:14,background:t.accent,border:"none",color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",opacity:(loading||!email.trim())?.7:1}}>
+                  {loading?"Enviando...":"Enviar link"}
+                </button>
+              </div>
+            )}
+            {err&&<div style={{marginTop:12,fontSize:12,color:t.red,textAlign:"center"}}>{err}</div>}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Root(){
+  const[session,setSession]=useState(undefined);
+  useEffect(()=>{
+    supabase.auth.getSession().then(({data:{session}})=>setSession(session));
+    const{data:{subscription}}=supabase.auth.onAuthStateChange((_,session)=>setSession(session));
+    return()=>subscription.unsubscribe();
+  },[]);
+  if(session===undefined){
+    const dark=window.matchMedia?.("(prefers-color-scheme:dark)").matches||false;
+    const t=dark?themes.dark:themes.light;
+    return<div style={{minHeight:"100dvh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><h1 style={{fontSize:28,fontWeight:800,color:t.text}}><span style={{color:t.accent}}>Rep</span>Forge</h1></div>;
+  }
+  if(!session)return<LoginScreen/>;
+  return<App session={session}/>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<Root/>);
 </script>
 </body>
 </html>

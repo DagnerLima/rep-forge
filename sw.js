@@ -1,5 +1,5 @@
 const CACHE='repforge-static';
-const CDN_HOSTS=['cdnjs.cloudflare.com','fonts.googleapis.com','fonts.gstatic.com'];
+const CDN_HOSTS=['cdnjs.cloudflare.com','fonts.googleapis.com','fonts.gstatic.com','cdn.jsdelivr.net'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -7,7 +7,8 @@ self.addEventListener('install', e => {
       'https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js',
       'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js',
       'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.9/babel.min.js',
-      'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap'
+      'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap',
+      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js'
     ])).then(() => self.skipWaiting())
   );
 });

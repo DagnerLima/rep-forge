@@ -1599,8 +1599,18 @@ function LoginScreen(){
 function Root(){
   const[session,setSession]=useState(undefined);
   useEffect(()=>{
-    supabase.auth.getSession().then(({data:{session}})=>setSession(session));
-    const{data:{subscription}}=supabase.auth.onAuthStateChange((_,session)=>setSession(session));
+    // Subscribe FIRST — catches SIGNED_IN emitted during URL token exchange,
+    // and INITIAL_SESSION emitted by newer supabase-js clients after init
+    let resolved=false;
+    const{data:{subscription}}=supabase.auth.onAuthStateChange((_,sess)=>{
+      resolved=true;
+      setSession(sess);
+    });
+    // Fallback: in case onAuthStateChange doesn't emit INITIAL_SESSION
+    // (older supabase-js); only applies if the listener hasn't fired yet
+    supabase.auth.getSession().then(({data:{session}})=>{
+      if(!resolved)setSession(session??null);
+    });
     return()=>subscription.unsubscribe();
   },[]);
   if(session===undefined){

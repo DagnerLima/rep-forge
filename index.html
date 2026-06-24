@@ -58,11 +58,11 @@ function useBodyLock(l){useEffect(()=>{if(l)document.body.classList.add("no-scro
 
 const DEFAULT_DATA={
   "Peito, Costas, Ombro e Bíceps":{dayLabel:"Ter",dayOfWeek:2,exercises:[
-    {name:"Supino reto com barra",sets:4,reps:"6–8",rest:120,initWeight:16,type:"barra"},
+    {name:"Supino reto no halter",sets:4,reps:"6–8",rest:120,initWeight:16,type:"halter"},
     {name:"Supino inclinado com halteres",sets:3,reps:"8–10",rest:120,initWeight:12,type:"halter"},
-    {name:"Remada máquina c/ apoio peito",sets:3,reps:"8–10",rest:120,initWeight:50,type:"máquina"},
-    {name:"Crucifixo no cabo (polia alta)",sets:2,reps:"10–15",rest:90,initWeight:5,type:"polia"},
-    {name:"Desenvolvimento ombro na máquina",sets:3,reps:"8–10",rest:90,initWeight:10,type:"máquina"},
+    {name:"Remada máquina c/ apoio peito",sets:3,reps:"8–10",rest:120,initWeight:52.6,type:"máquina",rule:"sf-stack"},
+    {name:"Crucifixo no cabo (polia alta)",sets:2,reps:"10–15",rest:90,initWeight:11.8,type:"polia",rule:"sf-stack"},
+    {name:"Desenvolvimento ombro no halter",sets:3,reps:"8–10",rest:90,initWeight:10,type:"halter"},
     {name:"Elevação lateral com halteres",sets:3,reps:"12–15",rest:90,initWeight:6,type:"halter"},
     {name:"Rosca direta barra W",sets:2,reps:"8–12",rest:90,initWeight:15,type:"barra"},
   ]},
@@ -76,8 +76,8 @@ const DEFAULT_DATA={
   ]},
   "Costas, Peito, Ombro, Bíceps e Manguito":{dayLabel:"Qui",dayOfWeek:4,exercises:[
     {name:"Puxada frente (pegada neutra)",sets:4,reps:"6–10",rest:120,initWeight:40,type:"máquina"},
-    {name:"Remada unilateral com halter",sets:3,reps:"8–12",rest:120,initWeight:30,type:"halter"},
-    {name:"Supino na máquina",sets:3,reps:"8–12",rest:120,initWeight:50,type:"máquina"},
+    {name:"Remada unilateral na máquina",sets:3,reps:"8–12",rest:120,initWeight:32.2,type:"máquina",rule:"sf-stack"},
+    {name:"Supino na máquina",sets:3,reps:"8–12",rest:120,initWeight:52.6,type:"máquina",rule:"sf-stack"},
     {name:"Peck deck",sets:2,reps:"10–15",rest:90,initWeight:30,type:"máquina"},
     {name:"Face pull na corda",sets:3,reps:"12–20",rest:90,initWeight:null,type:"polia"},
     {name:"Rosca alternada halteres",sets:2,reps:"10–12",rest:90,initWeight:10,type:"halter"},
@@ -104,7 +104,19 @@ const WEIGHTS={
   "corpo":[],
 };
 const TYPES=Object.keys(WEIGHTS);
-function getOpts(type,cur){const l=WEIGHTS[type]||[];if(!l.length)return[];const b=cur||0;const o=l.filter(w=>w>=Math.max(0,b-25)&&w<=b+35);if(cur&&!o.includes(cur))o.push(cur);o.sort((a,b)=>a-b);return o}
+
+// SmartFit weight rules — generated ladders for equipment whose plates don't fit
+// the category tables above (e.g. imported selectorized stacks labeled in kg).
+// A rule is {start, step}: weights = start, start+step, start+2·step, … (rounded to 0.1kg)
+function genLadder(start,step,n=24){return Array.from({length:n},(_,i)=>Math.round((start+step*i)*10)/10)}
+const WEIGHT_RULES={
+  // Selectorized stack on imported machines/cables: starts 11.8kg, 6.8kg increments
+  "sf-stack":{start:11.8,step:6.8},
+};
+function ruleLadder(rule){const r=WEIGHT_RULES[rule];return r?genLadder(r.start,r.step):null}
+// Snap a weight to the nearest value on a rule's ladder
+function snapToRule(weight,rule){const l=ruleLadder(rule);if(!l||weight==null)return weight;return l.reduce((a,b)=>Math.abs(b-weight)<Math.abs(a-weight)?b:a)}
+function getOpts(type,cur,rule){const l=ruleLadder(rule)||WEIGHTS[type]||[];if(!l.length)return[];const b=cur||0;const o=l.filter(w=>w>=Math.max(0,b-25)&&w<=b+35);if(cur&&!o.includes(cur))o.push(cur);o.sort((a,b)=>a-b);return o}
 
 const DAYS=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 const DEF_PHASES=[{name:"Entrada leve",color:"#4285f4",weeks:2},{name:"Base",color:"#34a853",weeks:2},{name:"Deload",color:"#fbbc04",weeks:1},{name:"Progressão",color:"#34a853",weeks:4},{name:"Deload final",color:"#ea4335",weeks:1}];
@@ -125,9 +137,34 @@ function migrateRests(state){
   if(state.td){Object.keys(state.td).forEach(k=>{state.td[k].exercises.forEach(ex=>{ex.rest=normalizeRest(ex.rest)})})}
   return state;
 }
+// One-off: bring saved state in line with the updated SmartFit default program.
+// Matched by workout + exercise name; idempotent (renamed/tagged exercises won't re-match).
+const SF_MIGRATION=[
+  {wk:"Peito, Costas, Ombro e Bíceps",from:"Supino reto com barra",set:{name:"Supino reto no halter",type:"halter"}},
+  {wk:"Peito, Costas, Ombro e Bíceps",from:"Remada máquina c/ apoio peito",set:{type:"máquina",rule:"sf-stack",initWeight:52.6}},
+  {wk:"Peito, Costas, Ombro e Bíceps",from:"Desenvolvimento ombro na máquina",set:{name:"Desenvolvimento ombro no halter",type:"halter"}},
+  {wk:"Peito, Costas, Ombro e Bíceps",from:"Crucifixo no cabo (polia alta)",set:{type:"polia",rule:"sf-stack",initWeight:11.8}},
+  {wk:"Costas, Peito, Ombro, Bíceps e Manguito",from:"Remada unilateral com halter",set:{name:"Remada unilateral na máquina",type:"máquina",rule:"sf-stack",initWeight:32.2}},
+  {wk:"Costas, Peito, Ombro, Bíceps e Manguito",from:"Supino na máquina",set:{type:"máquina",rule:"sf-stack",initWeight:52.6}},
+];
+function migrateSmartFit(state){
+  if(!state||!state.td)return state;
+  SF_MIGRATION.forEach(m=>{
+    const wk=state.td[m.wk];if(!wk)return;
+    wk.exercises.forEach((ex,idx)=>{
+      if(ex.name!==m.from)return;
+      // skip if this rule was already applied (idempotency for same-name swaps)
+      if(m.set.rule&&ex.rule===m.set.rule&&!m.set.name)return;
+      Object.assign(ex,m.set);
+      // snap not-yet-done session weights onto the new ladder; leave done sessions (history) intact
+      if(ex.rule){const ws=state.w?.[m.wk];if(ws)ws.sessions.forEach(s=>{if(s.status!=="done"&&s.exercises[idx])s.exercises[idx].weight=snapToRule(s.exercises[idx].weight,ex.rule)})}
+    });
+  });
+  return state;
+}
 
 const SK="rf_v7";
-const ld=()=>{try{const r=localStorage.getItem(SK);if(r)return migrateRests(JSON.parse(r))}catch{}return null};
+const ld=()=>{try{const r=localStorage.getItem(SK);if(r)return migrateSmartFit(migrateRests(JSON.parse(r)))}catch{}return null};
 const sv=s=>{try{localStorage.setItem(SK,JSON.stringify(s))}catch{}};
 const BACKUP_KEY="rf_backup";const BACKUP_MAX=3;
 function saveBackup(state){try{const backups=JSON.parse(localStorage.getItem(BACKUP_KEY)||"[]");backups.unshift({at:new Date().toISOString(),data:state});while(backups.length>BACKUP_MAX)backups.pop();localStorage.setItem(BACKUP_KEY,JSON.stringify(backups))}catch{}}
@@ -135,7 +172,7 @@ function getBackups(){try{return JSON.parse(localStorage.getItem(BACKUP_KEY)||"[
 function restoreBackup(idx){try{const backups=getBackups();if(backups[idx])return backups[idx].data}catch{}return null}
 
 async function sbSave(state){try{const{data:{user}}=await supabase.auth.getUser();if(!user)return;await supabase.from('user_state').upsert({id:user.id,state,updated_at:new Date().toISOString()})}catch{}}
-async function sbLoad(){try{const{data,error}=await supabase.from('user_state').select('state').single();if(!error&&data?.state)return migrateRests(JSON.parse(JSON.stringify(data.state)))}catch{}return null}
+async function sbLoad(){try{const{data,error}=await supabase.from('user_state').select('state').single();if(!error&&data?.state)return migrateSmartFit(migrateRests(JSON.parse(JSON.stringify(data.state))))}catch{}return null}
 
 function buildSessions(td,total){const w={};Object.keys(td).forEach(k=>{w[k]={cur:0,sessions:Array.from({length:total},()=>({status:null,exercises:td[k].exercises.map(e=>({weight:e.initWeight,sets:Array(e.sets).fill(false)}))}))};});return w}
 function sortOrder(td){return Object.keys(td).sort((a,b)=>(td[a].dayOfWeek||0)-(td[b].dayOfWeek||0))}
@@ -190,18 +227,20 @@ function getAudioCtx(){
 function playAlarm(){
   try{
     const ctx=getAudioCtx();
-    // Compressor for maximum loudness
+    // Gentle master limiter — keeps it loud without the harsh clipping/distortion
     const comp=ctx.createDynamicsCompressor();
-    comp.threshold.value=-20;comp.knee.value=0;comp.ratio.value=20;
-    comp.attack.value=0;comp.release.value=0.01;
-    comp.connect(ctx.destination);
+    comp.threshold.value=-10;comp.knee.value=20;comp.ratio.value=4;
+    comp.attack.value=0.003;comp.release.value=0.1;
+    const master=ctx.createGain();master.gain.value=0.5;
+    comp.connect(master);master.connect(ctx.destination);
     const beep=(start,freq,dur)=>{
       const o=ctx.createOscillator();const g=ctx.createGain();
       o.connect(g);g.connect(comp);
-      o.frequency.value=freq;o.type="square";
-      g.gain.setValueAtTime(0.9,start);
-      g.gain.exponentialRampToValueAtTime(0.01,start+dur);
-      o.start(start);o.stop(start+dur);
+      o.frequency.value=freq;o.type="triangle";// softer than square, no buzzy harmonics
+      g.gain.setValueAtTime(0.0001,start);
+      g.gain.exponentialRampToValueAtTime(0.6,start+0.012);// short attack avoids the onset click/pop
+      g.gain.exponentialRampToValueAtTime(0.0001,start+dur);// smooth decay
+      o.start(start);o.stop(start+dur+0.02);
     };
     const t=ctx.currentTime;
     beep(t,880,0.15);beep(t+0.22,880,0.15);beep(t+0.44,1320,0.25);
@@ -333,8 +372,8 @@ function RestTimer({seconds,onClose}){
   );
 }
 
-function WP({value,type,onChange}){
-  const t=useT();const ref=useRef(null);const opts=getOpts(type,value);
+function WP({value,type,rule,onChange}){
+  const t=useT();const ref=useRef(null);const opts=getOpts(type,value,rule);
   const[editing,setEditing]=useState(false);
   useEffect(()=>{if(ref.current&&value!=null&&!editing){const i=opts.indexOf(value);if(i>=0){const el=ref.current.children[i];if(el)el.scrollIntoView({inline:"center",behavior:"smooth"})}}},[value]);
   return(
@@ -425,7 +464,7 @@ function ExCard({ex,data,onUpdate,onRest,prog,idx,totalEx,autoOpen}){
         </div>
       </div>
       {open&&!skipped&&<div style={{marginTop:14}}>
-        {WEIGHTS[ex.type]?.length>0&&tag!=="dropset"&&<WP value={data.weight} type={ex.type} onChange={w=>onUpdate({...data,weight:w})}/>}
+        {(ex.rule||WEIGHTS[ex.type]?.length>0)&&tag!=="dropset"&&<WP value={data.weight} type={ex.type} rule={ex.rule} onChange={w=>onUpdate({...data,weight:w})}/>}
         <div style={{marginTop:12}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
             <div style={{fontSize:10,color:t.textSec,fontWeight:600,letterSpacing:1.5}}>SÉRIES</div>
@@ -498,7 +537,7 @@ function EditModal({td,wk,exIdx,onSave,onDelete,onClose,isNew,allTypes}){
       </div>
       <div style={{display:"flex",gap:10}}>
         {!isNew&&<button onClick={()=>{onDelete();onClose()}} style={{flex:1,padding:14,borderRadius:14,background:t.redBg,border:"none",color:t.red,fontSize:14,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}><I d={IC.trash} s={16} c={t.red}/>Excluir</button>}
-        <button onClick={()=>{if(!name.trim()||!sets)return;onSave({name,sets:parseInt(sets),reps:reps||"8–12",rest:rest||90,initWeight:weight,type});onClose()}} style={{flex:2,padding:14,borderRadius:14,background:t.accent,border:"none",color:"#fff",fontSize:14,fontWeight:700}}>Salvar</button>
+        <button onClick={()=>{if(!name.trim()||!sets)return;onSave({name,sets:parseInt(sets),reps:reps||"8–12",rest:rest||90,initWeight:weight,type,...(ex.rule?{rule:ex.rule}:{})});onClose()}} style={{flex:2,padding:14,borderRadius:14,background:t.accent,border:"none",color:"#fff",fontSize:14,fontWeight:700}}>Salvar</button>
       </div>
     </BottomSheet>
   );

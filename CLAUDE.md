@@ -7,6 +7,8 @@
 
 Raciocínio caro planeja e audita; modelo barato escreve o volume.
 
+**Quem despacha o prompt é o usuário.** O Opus entrega o prompt **em bloco de texto, pronto pra copiar**, e para por aí — nunca aciona subagente/Task pra implementar. Subagente começa do zero a cada chamada e re-lê o projeto inteiro; a sessão Sonnet do usuário fica quente e amortiza esse custo. Depois que o usuário avisar que o Sonnet terminou, o Opus audita pelo `git diff`.
+
 ## Construção de prompts
 
 - Referenciar arquivo por **caminho + linha**; nunca colar o conteúdo inteiro no prompt.

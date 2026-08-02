@@ -67,11 +67,11 @@ const DEFAULT_DATA={
     {name:"Rosca direta barra W",sets:2,reps:"8–12",rest:90,initWeight:15,type:"barra"},
   ]},
   "Quadríceps, Posterior, Panturrilha e Core":{dayLabel:"Qua",dayOfWeek:3,exercises:[
-    {name:"Leg press 45°",sets:4,reps:"6–10",rest:120,initWeight:20,type:"máquina"},
-    {name:"Agachamento no Smith",sets:3,reps:"8–10",rest:120,initWeight:10,type:"barra"},
-    {name:"Cadeira extensora",sets:2,reps:"12–15",rest:90,initWeight:30,type:"máquina"},
-    {name:"Mesa flexora",sets:3,reps:"10–15",rest:90,initWeight:25,type:"máquina"},
-    {name:"Panturrilha em pé na máquina",sets:3,reps:"8–12",rest:90,initWeight:10,type:"máquina"},
+    {name:"Leg press 45°",sets:4,reps:"6–10",rest:120,initWeight:20,type:"máquina",rule:"sf-plate"},
+    {name:"Agachamento no Smith",sets:3,reps:"8–10",rest:120,initWeight:10,type:"barra",rule:"sf-plate"},
+    {name:"Cadeira extensora",sets:2,reps:"12–15",rest:90,initWeight:11.8,type:"máquina",rule:"sf-stack"},
+    {name:"Mesa flexora",sets:3,reps:"10–15",rest:90,initWeight:11.8,type:"máquina",rule:"sf-stack"},
+    {name:"Panturrilha em pé na máquina",sets:3,reps:"8–12",rest:90,initWeight:10,type:"máquina",rule:"sf-plate"},
     {name:"Prancha",sets:3,reps:"30–45s",rest:45,initWeight:null,type:"corpo"},
   ]},
   "Costas, Peito, Ombro, Bíceps e Manguito":{dayLabel:"Qui",dayOfWeek:4,exercises:[
@@ -84,11 +84,11 @@ const DEFAULT_DATA={
     {name:"Rotação externa no cabo",sets:2,reps:"15–20",rest:45,initWeight:null,type:"polia"},
   ]},
   "Posterior, Glúteo, Panturrilha e Core":{dayLabel:"Sex",dayOfWeek:5,exercises:[
-    {name:"Terra romeno c/ halteres",sets:4,reps:"6–10",rest:120,initWeight:20,type:"halter"},
-    {name:"Flexora sentada",sets:3,reps:"10–15",rest:90,initWeight:40,type:"máquina"},
-    {name:"Hip thrust na máquina",sets:3,reps:"8–12",rest:120,initWeight:10,type:"máquina"},
-    {name:"Cadeira abdutora",sets:2,reps:"12–20",rest:90,initWeight:65,type:"máquina"},
-    {name:"Panturrilha sentada",sets:3,reps:"10–15",rest:90,initWeight:10,type:"máquina"},
+    {name:"Terra romeno c/ halteres",sets:4,reps:"6–10",rest:120,initWeight:20,type:"halter",rule:"sf-plate"},
+    {name:"Flexora sentada",sets:3,reps:"10–15",rest:90,initWeight:11.8,type:"máquina",rule:"sf-stack"},
+    {name:"Hip thrust na máquina",sets:3,reps:"8–12",rest:120,initWeight:10,type:"máquina",rule:"sf-plate"},
+    {name:"Cadeira abdutora",sets:2,reps:"12–20",rest:90,initWeight:11.8,type:"máquina",rule:"sf-stack"},
+    {name:"Panturrilha sentada",sets:3,reps:"10–15",rest:90,initWeight:10,type:"máquina",rule:"sf-plate"},
     {name:"Pallof press no cabo",sets:3,reps:"10–12/lado",rest:45,initWeight:null,type:"polia"},
   ]},
 };
@@ -112,6 +112,8 @@ function genLadder(start,step,n){return Array.from({length:n},(_,i)=>Math.round(
 const WEIGHT_RULES={
   // Selectorized stack on imported machines/cables: 11.8kg start, 6.8kg steps, full stack
   "sf-stack":{start:11.8,step:6.8,count:15},
+  // Plate/barbell load (anilhas/barra), 2.5kg steps, 2.5→100kg
+  "sf-plate":{start:2.5,step:2.5,count:40},
 };
 function ruleLadder(rule){const r=WEIGHT_RULES[rule];return r?genLadder(r.start,r.step,r.count):null}
 // Snap a weight to the nearest value on a rule's ladder
@@ -143,7 +145,7 @@ function migrateRests(state){
 }
 // One-off: bring saved state in line with the updated SmartFit default program.
 // Matched by workout + exercise name. Bump SF_MIG_VER to re-run after changing the table.
-const SF_MIG_VER=2;
+const SF_MIG_VER=3;
 const SF_MIGRATION=[
   {wk:"Peito, Costas, Ombro e Bíceps",from:"Supino reto com barra",set:{name:"Supino reto no halter",type:"halter"}},
   {wk:"Peito, Costas, Ombro e Bíceps",from:"Remada máquina c/ apoio peito",set:{type:"máquina",rule:"sf-stack",initWeight:11.8}},
@@ -152,6 +154,16 @@ const SF_MIGRATION=[
   {wk:"Costas, Peito, Ombro, Bíceps e Manguito",from:"Remada unilateral com halter",set:{name:"Remada unilateral na máquina",type:"máquina",rule:"sf-stack",initWeight:32.2}},
   {wk:"Costas, Peito, Ombro, Bíceps e Manguito",from:"Supino na máquina",set:{type:"máquina",rule:"sf-stack",initWeight:11.8}},
   {wk:"Costas, Peito, Ombro, Bíceps e Manguito",from:"Peck deck",set:{type:"máquina",rule:"sf-stack",initWeight:11.8}},
+  {wk:"Quadríceps, Posterior, Panturrilha e Core",from:"Leg press 45°",set:{type:"máquina",rule:"sf-plate",initWeight:20}},
+  {wk:"Quadríceps, Posterior, Panturrilha e Core",from:"Agachamento no Smith",set:{type:"barra",rule:"sf-plate",initWeight:10}},
+  {wk:"Quadríceps, Posterior, Panturrilha e Core",from:"Cadeira extensora",set:{type:"máquina",rule:"sf-stack",initWeight:11.8}},
+  {wk:"Quadríceps, Posterior, Panturrilha e Core",from:"Mesa flexora",set:{type:"máquina",rule:"sf-stack",initWeight:11.8}},
+  {wk:"Quadríceps, Posterior, Panturrilha e Core",from:"Panturrilha em pé na máquina",set:{type:"máquina",rule:"sf-plate",initWeight:10}},
+  {wk:"Posterior, Glúteo, Panturrilha e Core",from:"Terra romeno c/ halteres",set:{type:"halter",rule:"sf-plate",initWeight:20}},
+  {wk:"Posterior, Glúteo, Panturrilha e Core",from:"Flexora sentada",set:{type:"máquina",rule:"sf-stack",initWeight:11.8}},
+  {wk:"Posterior, Glúteo, Panturrilha e Core",from:"Hip thrust na máquina",set:{type:"máquina",rule:"sf-plate",initWeight:10}},
+  {wk:"Posterior, Glúteo, Panturrilha e Core",from:"Cadeira abdutora",set:{type:"máquina",rule:"sf-stack",initWeight:11.8}},
+  {wk:"Posterior, Glúteo, Panturrilha e Core",from:"Panturrilha sentada",set:{type:"máquina",rule:"sf-plate",initWeight:10}},
 ];
 function migrateSmartFit(state){
   if(!state||!state.td||state.sfMig>=SF_MIG_VER)return state;

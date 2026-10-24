@@ -5,7 +5,9 @@ const PRECACHE=[
   './',
   './index.html',
   './manifest.webmanifest',
+  './icon-192.png',
   './icon-512.png',
+  './icon-maskable-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.9/babel.min.js',
@@ -42,16 +44,11 @@ self.addEventListener('fetch', e => {
       }))
     );
   } else if (e.request.mode === 'navigate') {
-    // App shell: open instantly from cache (weak gym signal can't hang the start), refresh it in the
-    // background and tell the page when a new version arrived
+    // App shell: open instantly from cache (weak gym signal can't hang the start) and refresh it in the
+    // background; the page itself detects that it runs an old version and offers "Atualizar"
     const shell = caches.match('./');
     const net = fetch(e.request).then(async r => {
-      if (!r.ok) return r;
-      const fresh = await r.clone().text();
-      const old = await shell;
-      const changed = !old || (await old.clone().text()) !== fresh;
-      await caches.open(CACHE).then(c => c.put('./', r.clone()));
-      if (old && changed) (await self.clients.matchAll({ type: 'window' })).forEach(c => c.postMessage({ type: 'update' }));
+      if (r.ok) await caches.open(CACHE).then(c => c.put('./', r.clone()));
       return r;
     });
     e.waitUntil(net.catch(err => console.warn('atualização do app falhou', err)));

@@ -249,6 +249,7 @@ function saveBackup(state){
   while(backups.length){try{localStorage.setItem(scopedKey(BACKUP_KEY),JSON.stringify(backups));return true}catch(e){if(backups.length===1){console.error("Sem espaço para backup",e);return false}backups.pop()}}
   return false;
 }
+function deleteBackup(idx){const b=getBackups();if(!b[idx])return false;b.splice(idx,1);try{localStorage.setItem(scopedKey(BACKUP_KEY),JSON.stringify(b));return true}catch(e){console.error("Falha ao excluir backup",e);return false}}
 function restoreBackup(idx){const b=getBackups()[idx];return b?b.data:null}
 
 // Cloud sync. Each state carries _ts (time of the last user edit); on load the newer copy wins.
@@ -452,7 +453,7 @@ function RestTimer({seconds,next,onClose}){
           </svg>
           <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
             <div style={{fontSize:58,fontWeight:800,letterSpacing:-1,fontVariantNumeric:"tabular-nums",lineHeight:1}}>{fmtClock(rem)}</div>
-            <div style={{fontSize:13,color:"#94a3b8",marginTop:6}}>{run?`de ${fmtClock(total)}`:"pausado"}</div>
+            <div style={{fontSize:13,color:"#94a3b8",marginTop:6}}>{run?`De ${fmtClock(total)}`:"Pausado"}</div>
           </div>
         </div>
         {next&&<div style={{background:"rgba(255,255,255,.07)",borderRadius:18,padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,gap:10}}>
@@ -535,14 +536,14 @@ function ExCard({ex,data,onUpdate,onRest,prog,idx,last,autoOpen}){
         </div>
         {skipped?<button onClick={e=>{e.stopPropagation();toggleSkip()}} style={{background:t.accentBg,border:"none",borderRadius:10,padding:"7px 12px",fontSize:12,fontWeight:700,color:t.accent}}>Desfazer</button>
         :<div style={{textAlign:"right",flexShrink:0}}>
-          {hasLoad&&data.weight!=null?<div style={{fontSize:17,fontWeight:800,color:t.text,lineHeight:1}}>{fmtKg(data.weight)}<div style={{fontSize:11,color:t.textTer,fontWeight:600,marginTop:2}}>kg</div></div>:<div style={{fontSize:11,color:t.textTer,fontWeight:600}}>sem carga</div>}
+          {hasLoad&&data.weight!=null?<div style={{fontSize:17,fontWeight:800,color:t.text,lineHeight:1}}>{fmtKg(data.weight)}<div style={{fontSize:11,color:t.textTer,fontWeight:600,marginTop:2}}>kg</div></div>:<div style={{fontSize:11,color:t.textTer,fontWeight:600}}>Sem carga</div>}
           {!open&&<div style={{display:"flex",gap:3,justifyContent:"flex-end",marginTop:5}}>{curSets.map((d,i)=><i key={i} style={{width:6,height:6,borderRadius:3,background:d?t.accent:t.border,display:"block"}}/>)}</div>}
         </div>}
       </div>
       {open&&!skipped&&<div style={{marginTop:14}}>
         {last&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:t.cardAlt,borderRadius:14,padding:"10px 12px",marginBottom:12,fontSize:12,color:t.textSec,gap:8}}>
           <span>Última vez · {last.date}</span>
-          <span style={{display:"flex",alignItems:"center",gap:6}}><b style={{color:t.text}}>{last.weight!=null?`${fmtKg(last.weight)} kg`:"sem carga"}</b>· {last.done}/{last.total} séries
+          <span style={{display:"flex",alignItems:"center",gap:6}}><b style={{color:t.text}}>{last.weight!=null?`${fmtKg(last.weight)} kg`:"Sem carga"}</b>· {last.done}/{last.total} séries
             {delta!==0&&<span style={{display:"inline-flex",alignItems:"center",gap:3,padding:"3px 8px",borderRadius:100,background:delta>0?t.accentBg:t.cardAlt,color:delta>0?t.accent:t.textSec,fontWeight:700}}><I d={delta>0?IC.up:IC.down} s={11} c={delta>0?t.accent:t.textSec} sw={2.6}/>{fmtKg(Math.abs(delta))}</span>}</span>
         </div>}
         {hasLoad&&<WeightStepper value={data.weight} type={ex.type} rule={ex.rule} onChange={w=>onUpdate({...data,weight:w,...(tag==="dropset"&&data.dropWeights?{dropWeights:[w,...data.dropWeights.slice(1)]}:{})})}/>}
@@ -565,7 +566,7 @@ function ExCard({ex,data,onUpdate,onRest,prog,idx,last,autoOpen}){
         </div>
         :<div style={{display:"grid",gridTemplateColumns:`repeat(${Math.min(Math.max(curSets.length,1),4)},1fr)`,gap:8,marginBottom:12}}>
           {curSets.map((d,i)=><button key={i} onClick={()=>handleSetClick(i)} style={{height:64,borderRadius:18,border:d?"none":`1.5px ${i===nextIdx?"dashed":"solid"} ${i===nextIdx?t.accent:t.border}`,background:d?t.accent:t.card,color:d?"#cfe0ff":t.textSec,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,fontSize:12,fontWeight:600}}>
-            {d?<I d={IC.check} s={22} c="#fff" sw={2.6}/>:<b style={{fontSize:18,color:t.text}}>{i+1}</b>}<span>{d?`série ${i+1}`:ex.reps}</span></button>)}
+            {d?<I d={IC.check} s={22} c="#fff" sw={2.6}/>:<b style={{fontSize:18,color:t.text}}>{i+1}</b>}<span>{d?`Série ${i+1}`:ex.reps}</span></button>)}
         </div>}
         <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
           <Seg width={tag==="superset"?190:230} value={tag} onChange={setTag} opts={[[null,"Normal"],["superset","Super set"],["dropset","Drop"]]}/>
@@ -823,15 +824,12 @@ function PasteImportModal({existingWorkouts,td={},onImport,onClose}){
   );
 }
 
-function PlanModal({state,setState,onClose}){
-  const t=useT();
+function PlanModal({state,setState,onClose,section="dates"}){
+  const u=useUi(),t=u.t;
   const[total,setTotal]=useState(state.total||"");
   const[startD,setStartD]=useState(state.startDate?ymdLocal(state.startDate):"");
   const[phases,setPhases]=useState(JSON.parse(JSON.stringify(state.phases||[])));
   const[pickIdx,setPickIdx]=useState(null);
-  const[compensate,setCompensate]=useState(state.compensate||false);
-  const inp={width:"100%",padding:"12px 14px",borderRadius:12,border:`1px solid ${t.border}`,background:t.inputBg,color:t.text,fontSize:15,outline:"none",marginBottom:14};
-  const lbl={fontSize:10,color:t.textSec,fontWeight:600,letterSpacing:1,display:"block",marginBottom:4};
   const addPhase=()=>{if(phases.length<8)setPhases([...phases,{name:"Nova fase",color:PALETTE[phases.length%PALETTE.length],weeks:2}])};
   const removePhase=i=>{const c=[...phases];c.splice(i,1);setPhases(c)};
   const updatePhase=(i,field,val)=>{const c=[...phases];c[i]={...c[i],[field]:val};setPhases(c)};
@@ -844,59 +842,51 @@ function PlanModal({state,setState,onClose}){
     const ph2=phases.map(p=>({...p,weeks:parseInt(p.weeks)||1}));
     setState(p=>{
       saveBackup(p);
-      const n={...JSON.parse(JSON.stringify(p)),startDate:s.toISOString(),total:t2,phases:ph2,compensate};
+      const n={...JSON.parse(JSON.stringify(p)),startDate:s.toISOString(),total:t2,phases:ph2};
       if(t2!==p.total){const newW={};Object.keys(n.td).forEach(k=>{const old=n.w[k];newW[k]={cur:Math.min(old?.cur||0,t2-1),sessions:Array.from({length:t2},(_,i)=>{if(old?.sessions[i])return old.sessions[i];return{status:null,exercises:n.td[k].exercises.map(e=>({weight:e.initWeight,sets:Array(e.sets).fill(false)}))}})};});Object.values(newW).forEach(w=>{const f=w.sessions.findIndex(x=>!x.status);if(f>w.cur){const pv=w.sessions[f-1];w.sessions[f].exercises.forEach((e,q)=>{const b=pv.deload&&pv._origWeights?.[q]!=null?pv._origWeights[q]:pv.exercises[q]?.weight;if(b!=null)e.weight=b});w.cur=f}});n.w=newW;}
       return n;
     });onClose();
   };
+  const end=(()=>{const e=parseYmd(startD);if(!e)return null;e.setDate(e.getDate()+(parseInt(total)||16)*7);return e})();
+  const sb={width:42,height:42,borderRadius:12,background:t.cardAlt,border:"none",display:"flex",alignItems:"center",justifyContent:"center"};
+  const tw=parseInt(total)||0;
   return(
     <Modal onClose={onClose}>
-      {pickIdx!==null&&<div style={{position:"absolute",inset:0,background:t.overlay,borderRadius:24,zIndex:10,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setPickIdx(null)}>
+      {pickIdx!==null&&<div style={{position:"absolute",inset:0,background:t.overlay,borderRadius:"28px 28px 0 0",zIndex:10,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setPickIdx(null)}>
         <div style={{background:t.bg,borderRadius:20,padding:20,width:300,boxShadow:"0 8px 32px rgba(0,0,0,.2)"}} onClick={e=>e.stopPropagation()}>
-          <p style={{fontSize:13,fontWeight:600,color:t.text,marginBottom:12}}>Escolher cor</p>
+          <p style={{fontSize:14,fontWeight:700,color:t.text,marginBottom:12}}>Escolher cor</p>
           <ColorPicker color={phases[pickIdx]?.color||"#2563eb"} onChange={c=>updatePhase(pickIdx,"color",c)}/>
-          <button onClick={()=>setPickIdx(null)} style={{marginTop:12,width:"100%",padding:10,borderRadius:12,background:t.accent,border:"none",color:"#fff",fontSize:14,fontWeight:600}}>OK</button>
+          <button onClick={()=>setPickIdx(null)} style={{...u.btnP,width:"100%",height:46,marginTop:12}}>OK</button>
         </div>
       </div>}
-      <h2 style={{fontSize:18,fontWeight:700,marginBottom:24,color:t.text,display:"flex",alignItems:"center",gap:10}}><I d={IC.calendar} s={20} c={t.accent}/>Configurar plano</h2>
-      <label style={lbl}>DATA DE INÍCIO</label>
-      <input type="date" value={startD} onChange={e=>setStartD(e.target.value)} style={{...inp,WebkitAppearance:"none",maxWidth:"100%",overflow:"hidden"}}/>
-      <label style={lbl}>DURAÇÃO (SEMANAS)</label>
-      <input type="number" min="1" max="52" value={total} onChange={e=>setTotal(e.target.value===""?"":parseInt(e.target.value)||"")} style={inp} placeholder="Ex: 16"/>
-      
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-        <label style={{...lbl,marginBottom:0}}>FASES DE PERIODIZAÇÃO</label>
-      </div>
-      {phases.map((ph,i)=>(
-        <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-          <button onClick={()=>setPickIdx(i)} style={{width:32,height:32,borderRadius:"50%",background:ph.color,border:`3px solid ${t.border}`,cursor:"pointer",flexShrink:0,padding:0,boxShadow:"inset 0 0 0 2px rgba(255,255,255,.3)"}}/>
-          <input value={ph.name} onChange={e=>updatePhase(i,"name",e.target.value)} style={{...inp,marginBottom:0,flex:1}} placeholder="Nome da fase"/>
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0}}>
-            <input type="number" min="1" max="20" value={ph.weeks??""} onChange={e=>{const v=e.target.value;updatePhase(i,"weeks",v===""?"":Math.max(1,parseInt(v)||1))}} onBlur={()=>{if(ph.weeks==="")updatePhase(i,"weeks",1)}} style={{width:40,height:32,borderRadius:8,border:`1px solid ${t.border}`,background:t.inputBg,color:t.text,fontSize:14,fontWeight:600,textAlign:"center",outline:"none",padding:0}}/>
-            <span style={{fontSize:8,color:t.textTer,fontWeight:600,letterSpacing:.5}}>SEM</span>
+      <SheetHead title={section==="phases"?"Fases":"Início e duração"} onClose={onClose}/>
+      {section==="dates"?<>
+        <label style={u.lbl}>Data de início</label>
+        <input type="date" value={startD} onChange={e=>setStartD(e.target.value)} style={{...u.inp,WebkitAppearance:"none"}}/>
+        <label style={u.lbl}>Duração</label>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:t.card,borderRadius:16,padding:6,marginBottom:14,boxShadow:t.shadow}}>
+          <button aria-label="Menos semanas" style={sb} onClick={()=>setTotal(Math.max(1,tw-1))}><I d={IC.minus} s={18} c={t.text} sw={2.4}/></button>
+          <b style={{fontSize:18,color:t.text}}>{tw||"—"} <span style={{fontSize:12,color:t.textSec,fontWeight:600}}>semana{tw!==1?"s":""}</span></b>
+          <button aria-label="Mais semanas" style={sb} onClick={()=>setTotal(Math.min(52,tw+1))}><I d={IC.plus} s={18} c={t.text} sw={2.4}/></button>
+        </div>
+        {end&&<p style={{fontSize:13,color:t.textSec,margin:"0 4px 18px"}}>Termina em {end.toLocaleDateString("pt-BR")}</p>}
+      </>:<>
+        {phases.map((ph,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+            <button aria-label="Cor da fase" onClick={()=>setPickIdx(i)} style={{width:34,height:34,borderRadius:"50%",background:ph.color,border:`3px solid ${t.card}`,boxShadow:`0 0 0 1px ${t.border}`,flexShrink:0,padding:0}}/>
+            <input value={ph.name} onChange={e=>updatePhase(i,"name",e.target.value)} style={{...u.inp,marginBottom:0,flex:1,padding:"12px 14px"}} placeholder="Nome da fase"/>
+            <input type="number" aria-label="Semanas" min="1" max="20" value={ph.weeks??""} onChange={e=>{const v=e.target.value;updatePhase(i,"weeks",v===""?"":Math.max(1,parseInt(v)||1))}} onBlur={()=>{if(ph.weeks==="")updatePhase(i,"weeks",1)}} style={{width:58,padding:"12px 6px",borderRadius:14,border:`1.5px solid ${t.border}`,background:t.inputBg,color:t.text,fontWeight:700,textAlign:"center",outline:"none"}}/>
+            <button aria-label="Remover fase" onClick={()=>removePhase(i)} style={{background:"none",border:"none",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><I d={IC.close} s={16} c={t.textTer} sw={2.4}/></button>
           </div>
-          <button onClick={()=>removePhase(i)} style={{background:"transparent",border:"none",borderRadius:10,width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:.5}}><I d={IC.close} s={14} c={t.textSec}/></button>
-        </div>
-      ))}
-      {phases.length>0&&totalPhaseWeeks!==(parseInt(total)||16)&&<p style={{fontSize:11,color:"#ea4335",marginBottom:8}}>⚠ Fases somam {totalPhaseWeeks} semanas, mas o plano tem {parseInt(total)||16} semanas</p>}
-      <button onClick={addPhase} style={{width:"100%",padding:10,borderRadius:12,background:t.card,border:`1px dashed ${t.border}`,color:t.accent,fontSize:13,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:14}}><I d={IC.plus} s={14} c={t.accent}/>Adicionar fase</button>
-      {phases.length===0&&<p style={{fontSize:12,color:t.textTer,marginBottom:14}}>Sem fases — progresso será linear.</p>}
-
-      {parseYmd(startD)&&total&&<p style={{fontSize:12,color:t.textSec,marginTop:10,marginBottom:16}}>Término: {(()=>{const e=parseYmd(startD);e.setDate(e.getDate()+(parseInt(total)||16)*7);return e.toLocaleDateString("pt-BR")})()}</p>}
-
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",marginBottom:16,borderTop:`1px solid ${t.border}`,borderBottom:`1px solid ${t.border}`}}>
-        <div>
-          <div style={{fontSize:13,fontWeight:600,color:t.text}}>Compensar faltas</div>
-          <div style={{fontSize:11,color:t.textSec,marginTop:2}}>O prazo acompanha as sessões que faltam — não expira enquanto houver treino pendente</div>
-        </div>
-        <button onClick={()=>setCompensate(!compensate)} style={{width:44,height:26,borderRadius:13,background:compensate?t.accent:t.cardAlt,border:"none",position:"relative",transition:"background .2s",cursor:"pointer",flexShrink:0}}>
-          <div style={{width:20,height:20,borderRadius:10,background:"#fff",position:"absolute",top:3,left:compensate?21:3,transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.2)"}}/>
-        </button>
-      </div>
-
-      <div style={{display:"flex",gap:10}}>
-        <button onClick={onClose} style={{flex:1,padding:14,borderRadius:14,background:t.cardAlt,border:"none",color:t.textSec,fontSize:14,fontWeight:500}}>Cancelar</button>
-        <button onClick={apply} style={{flex:1,padding:14,borderRadius:14,background:t.accent,border:"none",color:"#fff",fontSize:14,fontWeight:700}}>Salvar</button>
+        ))}
+        <div style={{fontSize:11,color:t.textTer,textAlign:"right",margin:"-4px 40px 10px 0"}}>Semanas</div>
+        {phases.length>0&&totalPhaseWeeks!==(parseInt(total)||16)&&<p style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:t.red,margin:"0 4px 10px"}}><I d={IC.alert} s={14} c={t.red}/>As fases somam {totalPhaseWeeks} semanas, mas o plano tem {parseInt(total)||16}</p>}
+        {phases.length===0&&<p style={{fontSize:13,color:t.textTer,margin:"0 4px 12px"}}>Sem fases — o progresso é linear.</p>}
+        <button onClick={addPhase} style={{width:"100%",height:46,borderRadius:16,background:"transparent",border:`1.5px dashed ${t.border}`,color:t.accent,fontSize:14,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:16}}><I d={IC.plus} s={16} c={t.accent} sw={2.4}/>Adicionar fase</button>
+      </>}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 2fr",gap:10}}>
+        <button onClick={onClose} style={u.btnG}>Cancelar</button>
+        <button onClick={apply} style={u.btnP}>Salvar</button>
       </div>
     </Modal>
   );
@@ -957,7 +947,7 @@ function LoadSummary({pts,doneN}){
     <div style={{display:"flex",alignItems:"baseline",gap:10,marginBottom:6,flexWrap:"wrap"}}>
       <b style={{fontSize:34,fontWeight:800,letterSpacing:-1,color:t.text}}>{fmtKg(cur)} kg</b>
       {delta!==0&&<span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:100,background:delta>0?t.accentBg:t.cardAlt,color:delta>0?t.accent:t.textSec,fontSize:12,fontWeight:700}}><I d={delta>0?IC.up:IC.down} s={12} c={delta>0?t.accent:t.textSec} sw={2.6}/>{fmtKg(Math.abs(delta))} kg · {delta>0?"+":""}{String(pct).replace(".",",")}%</span>}
-      <span style={{fontSize:13,color:t.textSec}}>em {pts.length} sessões</span>
+      <span style={{fontSize:13,color:t.textSec}}>Em {pts.length} sessões</span>
     </div>
     <LoadChart pts={pts}/>
   </>);
@@ -1019,10 +1009,15 @@ function ProgressView({state,WK,td}){
   const exOpts=WK.flatMap(k=>(td[k]?.exercises||[]).map((e,j)=>({k,j,name:e.name})));
   const best=exOpts.find(o=>ptsFor(state,o.k,o.j).length>=2)||exOpts[0];
   const[sel,setSel]=useState(best?`${best.k}|${best.j}`:"");
-  const now=new Date();let a,b,label;
-  if(period==="week"){a=weekStart(now);a.setDate(a.getDate()+off*7);b=new Date(a);b.setDate(b.getDate()+7);const e=new Date(b);e.setDate(e.getDate()-1);label=rangeLabel(a,e)}
-  else if(period==="month"){a=new Date(now.getFullYear(),now.getMonth()+off,1);b=new Date(a.getFullYear(),a.getMonth()+1,1);label=a.toLocaleDateString("pt-BR",{month:"long",year:"numeric"})}
-  else{a=parseYmd(ymdLocal(state.startDate))||new Date(0);b=new Date(8640000000000000);label=`Desde ${ddmm(a)}`}
+  // periods start at the plan start: no navigating before it, and the first week/month is clipped to it
+  const now=new Date(),pStart0=parseYmd(ymdLocal(state.startDate));let a,b,label,atFirst=false,wa;
+  if(period==="week"){wa=weekStart(now);wa.setDate(wa.getDate()+off*7);b=new Date(wa);b.setDate(b.getDate()+7);const e=new Date(b);e.setDate(e.getDate()-1);
+    a=pStart0&&pStart0>wa?pStart0:wa;atFirst=!!pStart0&&wa<=weekStart(pStart0);
+    const n=pStart0?Math.round((wa-weekStart(pStart0))/(7*86400000))+1:null;label=`${n>0?`Semana ${n} · `:""}${rangeLabel(a,e)}`}
+  else if(period==="month"){const ma=new Date(now.getFullYear(),now.getMonth()+off,1);b=new Date(ma.getFullYear(),ma.getMonth()+1,1);
+    a=pStart0&&pStart0>ma?pStart0:ma;atFirst=!!pStart0&&ma<=new Date(pStart0.getFullYear(),pStart0.getMonth(),1);
+    label=(s=>s.charAt(0).toUpperCase()+s.slice(1))(ma.toLocaleDateString("pt-BR",{month:"long",year:"numeric"}))}
+  else{a=pStart0||new Date(0);b=new Date(8640000000000000);label=`Desde ${ddmm(a)}`}
   const inR=sessionsOf(state,WK).filter(x=>x.at>=a&&x.at<b);
   const done=inR.filter(x=>x.s.status==="done"),skipped=inR.filter(x=>x.s.status==="skipped");
   const mus={};done.forEach(x=>(td[x.k]?.exercises||[]).forEach((e,j)=>{const d=x.s.exercises?.[j];if(!d||d.skipped)return;const n=(d.sets||[]).filter(Boolean).length;if(!n)return;musclesOf(e.name).forEach(m=>{mus[m]=(mus[m]||0)+n})}));
@@ -1035,15 +1030,15 @@ function ProgressView({state,WK,td}){
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}><h1 style={{fontSize:26,fontWeight:800,letterSpacing:-.5,color:t.text}}>Progresso</h1>
       <Seg width={190} value={period} onChange={v=>{setPeriod(v);setOff(0)}} opts={[["week","Semana"],["month","Mês"],["plan","Plano"]]}/></div>
     <div style={u.card}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><h3 style={{...u.h3,textTransform:period==="month"?"capitalize":"none"}}>{label}</h3>{period!=="plan"&&<div style={{display:"flex",gap:8}}>{arrow(-1,false)}{arrow(1,off>=0)}</div>}</div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><h3 style={u.h3}>{label}</h3>{period!=="plan"&&<div style={{display:"flex",gap:8}}>{arrow(-1,atFirst)}{arrow(1,off>=0)}</div>}</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-        {[[done.length,"treinos"],[done.reduce((n,x)=>n+doneSets(x.s),0),"séries"],[skipped.length,skipped.length===1?"pulado":"pulados"],[musList.length,"músculos"]].map(([v,l])=><div key={l}><b style={{display:"block",fontSize:22,fontWeight:800,letterSpacing:-.5,color:t.text}}>{v}</b><span style={{fontSize:11,color:t.textSec,fontWeight:500}}>{l}</span></div>)}
+        {[[done.length,done.length===1?"Treino":"Treinos"],[done.reduce((n,x)=>n+doneSets(x.s),0),"Séries"],[skipped.length,skipped.length===1?"Pulado":"Pulados"],[musList.length,"Músculos"]].map(([v,l])=><div key={l}><b style={{display:"block",fontSize:22,fontWeight:800,letterSpacing:-.5,color:t.text}}>{v}</b><span style={{fontSize:11,color:t.textSec,fontWeight:500}}>{l}</span></div>)}
       </div>
       {period==="week"&&<div style={{display:"flex",justifyContent:"space-between",marginTop:14}}>
-        {Array.from({length:7},(_,i)=>{const d=new Date(a);d.setDate(d.getDate()+i);const key=ymdLocal(d);const on=inR.filter(x=>ymdLocal(x.at)===key);
+        {Array.from({length:7},(_,i)=>{const d=new Date(wa);d.setDate(d.getDate()+i);const key=ymdLocal(d);const before=!!pStart0&&d<pStart0;const on=inR.filter(x=>ymdLocal(x.at)===key);
           const isDone=on.some(x=>x.s.status==="done"),isSkip=!isDone&&on.length>0,isToday=key===todayKey,future=key>todayKey,plan=planned.has(d.getDay())&&(!pStart||d>=pStart);
           const st=isDone?{bg:t.accent,c:"#fff",ic:IC.check}:isSkip?{bg:t.cardAlt,c:t.textSec,ic:IC.close,ring:t.border}:isToday?{bg:t.accentBg,c:t.accent,ring:t.accent}:future&&plan?{bg:t.accentBg,c:t.accent}:{bg:t.cardAlt,c:t.textTer};
-          return<div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,width:44}}>
+          return<div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,width:44,opacity:before?.35:1}}>
             <div style={{width:38,height:38,borderRadius:13,background:st.bg,boxShadow:st.ring?`inset 0 0 0 1.5px ${st.ring}`:"none",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:st.c}}>{st.ic?<I d={st.ic} s={16} c={st.c} sw={2.8}/>:d.getDate()}</div>
             <small style={{fontSize:10,color:isToday?t.accent:t.textTer,fontWeight:700}}>{DAYS[d.getDay()].toUpperCase()}</small></div>})}
       </div>}
@@ -1329,7 +1324,7 @@ function App({session}){
   const overlays=<>
     {toastEl}
     {updateReady&&<button onClick={()=>location.reload()} style={{position:"fixed",bottom:"calc(86px + env(safe-area-inset-bottom))",left:"50%",transform:"translateX(-50%)",background:t.accent,color:"#fff",border:"none",padding:"12px 20px",borderRadius:100,fontSize:14,fontWeight:600,zIndex:60,boxShadow:"0 6px 16px rgba(37,99,235,.35)",whiteSpace:"nowrap"}}>Nova versão disponível · Atualizar</button>}
-    {showPlan&&<PlanModal state={state} setState={setState} onClose={()=>setShowPlan(false)}/>}
+    {showPlan&&<PlanModal section={showPlan} state={state} setState={setState} onClose={()=>setShowPlan(false)}/>}
     {showNewWk&&<NewWorkoutModal existing={WK} usedDays={WK.map(k=>td[k]?.dayOfWeek)} onSave={createWorkout} onClose={()=>setShowNewWk(false)}/>}
     {showPaste&&<PasteImportModal existingWorkouts={WK} td={td} onImport={parseText} onClose={()=>setShowPaste(false)}/>}
     {showChart&&<ProgressChart wk={showChart} state={state} onClose={()=>setShowChart(null)}/>}
@@ -1340,7 +1335,7 @@ function App({session}){
         return<button key={i} onClick={()=>{if(!confirm(`Restaurar backup de ${d.toLocaleString("pt-BR")}? O estado atual será substituído.`))return;const r=restoreBackup(i);if(r){saveBackup(state);setState(migrateUi(dropLegacy(migrateSmartFit(migrateRests(r)))));setShowBackups(false);showToast("Backup restaurado")}else alert("Erro ao restaurar")}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:14,borderRadius:18,background:t.card,border:"none",boxShadow:t.shadow,marginBottom:8,textAlign:"left"}}>
           <span style={{width:36,height:36,borderRadius:12,background:t.accentBg,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.archive} s={18} c={t.accent}/></span>
           <span style={{flex:1}}><b style={{display:"block",fontSize:14,color:t.text}}>{d.toLocaleDateString("pt-BR")} · {d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</b><span style={{fontSize:12,color:t.textSec}}>{done} sessões concluídas</span></span>
-          <I d={IC.chevR} s={16} c={t.textTer} sw={2.4}/></button>})}
+          <span role="button" aria-label="Excluir backup" onClick={e=>{e.stopPropagation();if(!confirm(`Excluir o backup de ${d.toLocaleString("pt-BR")}? Não dá para desfazer.`))return;if(deleteBackup(i)){showToast("Backup excluído");if(bkList.length<=1)setShowBackups(false)}else alert("Erro ao excluir")}} style={{width:36,height:36,borderRadius:12,background:t.redBg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><I d={IC.trash} s={16} c={t.red}/></span></button>})}
     </Modal>}
     {editEx&&<EditModal td={td} wk={editEx.wk} exIdx={editEx.idx} isNew={editEx.isNew} onSave={d=>saveExEdit(editEx.wk,editEx.idx,d)} onDelete={()=>deleteEx(editEx.wk,editEx.idx)} onClose={()=>setEditEx(null)} allTypes={[...TYPES.filter(t2=>!(state.removedTypes||[]).includes(t2)),...(state.customTypes||[])]}/>}
   </>;
@@ -1369,9 +1364,9 @@ function App({session}){
       {nk&&ns?<div style={{background:`linear-gradient(150deg,${t.heroA},${t.heroB})`,borderRadius:26,padding:20,color:"#fff",position:"relative",overflow:"hidden",boxShadow:"0 12px 30px rgba(15,23,42,.25)"}}>
         <div style={{position:"absolute",right:-60,top:-60,width:200,height:200,borderRadius:"50%",background:"radial-gradient(circle,rgba(37,99,235,.55),transparent 70%)"}}/>
         <div style={{position:"relative"}}>
-          <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}><span style={{...hc,background:isToday?"#2563eb":hc.background,color:isToday?"#fff":hc.color}}>{isToday?"HOJE":`PRÓXIMO · ${(td[nk].dayLabel||"").toUpperCase()}`}</span>{phNow&&<span style={hc}>{phNow.name} · semana {nw.cur+1}/{TOTAL}</span>}</div>
+          <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}><span style={{...hc,background:isToday?"#2563eb":hc.background,color:isToday?"#fff":hc.color}}>{isToday?"HOJE":`PRÓXIMA · ${(td[nk].dayLabel||"").toUpperCase()}`}</span>{phNow&&<span style={hc}>{phNow.name} · semana {nw.cur+1}/{TOTAL}</span>}</div>
           <h2 style={{fontSize:22,fontWeight:800,letterSpacing:-.4,lineHeight:1.2}}>{nk}</h2>
-          <div style={{display:"flex",gap:18,margin:"12px 0 14px"}}>{[[nexs.length,"exercícios"],[ns.exercises.reduce((n,e)=>n+(e.sets||[]).length,0),"séries"]].map(([v,l])=><div key={l} style={{fontSize:12,color:"#94a3b8"}}><b style={{display:"block",fontSize:17,color:"#fff",fontWeight:700}}>{v}</b>{l}</div>)}</div>
+          <div style={{display:"flex",gap:18,margin:"12px 0 14px"}}>{[[nexs.length,"Exercícios"],[ns.exercises.reduce((n,e)=>n+(e.sets||[]).length,0),"Séries"]].map(([v,l])=><div key={l} style={{fontSize:12,color:"#94a3b8"}}><b style={{display:"block",fontSize:17,color:"#fff",fontWeight:700}}>{v}</b>{l}</div>)}</div>
           {nexs.length>0&&<div style={{background:"rgba(255,255,255,.06)",borderRadius:16,padding:"4px 12px",marginBottom:16}}>
             {nexs.slice(0,3).map((ex,j)=>{const d=ns.exercises[j]||{};return<div key={j} style={{display:"flex",justifyContent:"space-between",gap:10,padding:"9px 0",borderBottom:"1px solid rgba(255,255,255,.07)",fontSize:13}}><span style={{color:"#e2e8f0",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ex.name}</span><em style={{fontStyle:"normal",color:"#94a3b8",fontSize:12,fontWeight:600,flexShrink:0}}>{(d.sets||[]).length}×{ex.reps}{d.weight!=null?` · ${fmtKg(d.weight)} kg`:""}</em></div>})}
             <div style={{fontSize:12,color:"#94a3b8",textAlign:"center",padding:"8px 0 4px"}}>{nexs.length>3?`+ ${nexs.length-3} exercício${nexs.length-3>1?"s":""}`:"Treino completo acima"}</div>
@@ -1383,7 +1378,7 @@ function App({session}){
         <div style={{width:52,height:52,borderRadius:18,background:t.accentBg,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}><I d={IC.check} s={26} c={t.accent} sw={2.6}/></div>
         <h2 style={{fontSize:20,fontWeight:800,color:t.text}}>{WK.length?"Plano concluído":"Nenhum treino ainda"}</h2>
         <p style={{fontSize:13,color:t.textSec,margin:"6px 0 14px"}}>{WK.length?"Todas as sessões foram registradas.":"Crie um treino ou importe de um texto."}</p>
-        {WK.length>0&&<button onClick={()=>setShowPlan(true)} style={{...u.link,fontSize:14}}>Ajustar plano</button>}
+        {WK.length>0&&<button onClick={()=>go("settings")} style={{...u.link,fontSize:14}}>Ajustar plano</button>}
       </div>}
       <div style={u.card}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:12}}><h3 style={u.h3}>Esta semana</h3><button onClick={()=>go("progress")} style={u.link}>Resumo</button></div>
@@ -1395,16 +1390,16 @@ function App({session}){
         </div>
       </div>
       <div style={u.card}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:12}}><h3 style={u.h3}>Plano</h3><button onClick={()=>setShowPlan(true)} style={u.link}>Ajustar</button></div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:12}}><h3 style={u.h3}>Plano</h3><button onClick={()=>go("settings")} style={u.link}>Ajustar</button></div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:14}}>
-          <div><b style={{display:"block",fontSize:22,fontWeight:800,letterSpacing:-.5,color:t.text}}>{totalDone}<span style={{fontSize:14,color:t.textTer}}>/{total}</span></b><span style={{fontSize:11,color:t.textSec}}>sessões feitas</span></div>
-          <div><b style={{display:"block",fontSize:22,fontWeight:800,letterSpacing:-.5,color:allDone?t.accent:dl!=null&&dl<0?t.red:t.text}}>{allDone?<I d={IC.check} s={24} c={t.accent} sw={2.8}/>:dl==null?"—":Math.max(dl,0)}</b><span style={{fontSize:11,color:t.textSec}}>{allDone?"concluído":dl!=null&&dl<0?"expirado":"dias restantes"}</span></div>
-          <div><b style={{display:"block",fontSize:22,fontWeight:800,letterSpacing:-.5,color:t.text}}>{streakWeeks(state,WK)}</b><span style={{fontSize:11,color:t.textSec}}>semanas seguidas</span></div>
+          <div><b style={{display:"block",fontSize:22,fontWeight:800,letterSpacing:-.5,color:t.text}}>{totalDone}<span style={{fontSize:14,color:t.textTer}}>/{total}</span></b><span style={{fontSize:11,color:t.textSec}}>Sessões feitas</span></div>
+          <div><b style={{display:"block",fontSize:22,fontWeight:800,letterSpacing:-.5,color:allDone?t.accent:dl!=null&&dl<0?t.red:t.text}}>{allDone?<I d={IC.check} s={24} c={t.accent} sw={2.8}/>:dl==null?"—":Math.max(dl,0)}</b><span style={{fontSize:11,color:t.textSec}}>{allDone?"Concluído":dl!=null&&dl<0?"Expirado":"Dias restantes"}</span></div>
+          <div><b style={{display:"block",fontSize:22,fontWeight:800,letterSpacing:-.5,color:t.text}}>{streakWeeks(state,WK)}</b><span style={{fontSize:11,color:t.textSec}}>Semanas seguidas</span></div>
         </div>
         {phaseBar(curPh)}
         <div style={{display:"flex",justifyContent:"space-between",gap:8,fontSize:11,color:t.textSec,marginTop:8}}>
-          <span>{phNow?<>Fase <b style={{color:t.text}}>{phNow.name}</b>{phNext&&toNext>0?` · próxima: ${phNext.name} em ${toNext} sem.`:""}</>:"Progresso linear"}</span>
-          {pe&&<span style={{flexShrink:0}}>até {ddmm(pe.end)}{pe.extra>0?` (+${pe.extra}d)`:""}</span>}
+          <span>{phNow?<>Fase <b style={{color:t.text}}>{phNow.name}</b>{phNext&&toNext>0?` · Próxima: ${phNext.name} em ${toNext} semana${toNext>1?"s":""}`:""}</>:"Progresso linear"}</span>
+          {pe&&<span style={{flexShrink:0}}>Até {ddmm(pe.end)}{pe.extra>0?` (+${pe.extra}d)`:""}</span>}
         </div>
       </div>
       <div style={u.card}>
@@ -1416,8 +1411,8 @@ function App({session}){
           const C=2*Math.PI*14;
           return<div key={k} onClick={()=>{if(!reorder&&!isDone)openWorkout(k)}} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderTop:`1px solid ${t.border}`,cursor:!reorder&&!isDone?"pointer":"default",opacity:isDone?.55:1}}>
             <div style={{width:46,height:46,borderRadius:14,background:isTodayK?t.accent:t.cardAlt,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <b style={{fontSize:13,fontWeight:800,color:isTodayK?"#fff":t.text}}>{(d.dayLabel||"").toUpperCase()}</b><small style={{fontSize:9,fontWeight:700,color:isTodayK?"#dbe6ff":t.textTer}}>{isTodayK?"HOJE":`${Math.min(w.cur+1,TOTAL)}/${TOTAL}`}</small></div>
-            <div style={{flex:1,minWidth:0}}><div style={{fontSize:14,fontWeight:600,color:t.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{k}</div><span style={{fontSize:12,color:t.textSec}}>{d.exercises.length} exercício{d.exercises.length!==1?"s":""} · {series} séries</span></div>
+              <b style={{fontSize:13,fontWeight:800,color:isTodayK?"#fff":t.text}}>{(d.dayLabel||"").toUpperCase()}</b>{isTodayK&&<small style={{fontSize:9,fontWeight:700,color:"#dbe6ff"}}>HOJE</small>}</div>
+            <div style={{flex:1,minWidth:0}}><div style={{fontSize:14,fontWeight:600,color:t.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{k}</div><span style={{fontSize:12,color:t.textSec}}>{isDone?"Concluído":`Sessão ${Math.min(w.cur+1,TOTAL)} de ${TOTAL}`} · {d.exercises.length} exercício{d.exercises.length!==1?"s":""} · {series} séries</span></div>
             {reorder?<div style={{display:"flex",gap:4}}>
               <button aria-label="Mover para cima" onClick={e=>{e.stopPropagation();moveWorkout(k,-1)}} disabled={wi===0} style={{width:34,height:34,borderRadius:10,border:"none",background:t.cardAlt,opacity:wi===0?.35:1,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.up} s={16} c={t.text} sw={2.4}/></button>
               <button aria-label="Mover para baixo" onClick={e=>{e.stopPropagation();moveWorkout(k,1)}} disabled={wi===WK.length-1} style={{width:34,height:34,borderRadius:10,border:"none",background:t.cardAlt,opacity:wi===WK.length-1?.35:1,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.down} s={16} c={t.text} sw={2.4}/></button></div>
@@ -1528,7 +1523,7 @@ function App({session}){
         <button onClick={()=>setHistDay(null)} style={f(histDay==null)}>Todos</button>
         {dayOpts.map(d=><button key={d} onClick={()=>setHistDay(d)} style={f(histDay===d)}>{DAYS[d]}</button>)}</div>}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:6}}>
-        {[[nDone,nDone===1?"treino feito":"treinos feitos"],[nSkip,nSkip===1?"pulado":"pulados"],[list.length?`${Math.round(nDone/list.length*100)}%`:"—","frequência"]].map(([v,l])=><div key={l} style={{background:t.card,borderRadius:18,padding:12,boxShadow:t.shadow}}><b style={{display:"block",fontSize:22,fontWeight:800,color:t.text}}>{v}</b><span style={{fontSize:11,color:t.textSec,fontWeight:500}}>{l}</span></div>)}
+        {[[nDone,nDone===1?"Treino feito":"Treinos feitos"],[nSkip,nSkip===1?"Pulado":"Pulados"],[list.length?`${Math.round(nDone/list.length*100)}%`:"—","Frequência"]].map(([v,l])=><div key={l} style={{background:t.card,borderRadius:18,padding:12,boxShadow:t.shadow}}><b style={{display:"block",fontSize:22,fontWeight:800,color:t.text}}>{v}</b><span style={{fontSize:11,color:t.textSec,fontWeight:500}}>{l}</span></div>)}
       </div>
       {!list.length&&<p style={{textAlign:"center",color:t.textTer,fontSize:13,padding:"40px 0"}}>Nenhum treino registrado ainda</p>}
       {groups.map(g=><div key={g.key}>
@@ -1565,21 +1560,21 @@ function App({session}){
       <div style={{display:"flex",alignItems:"center",gap:12,background:t.card,borderRadius:20,padding:"14px 16px",boxShadow:t.shadow}}>
         <div style={{width:46,height:46,borderRadius:"50%",background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:17,flexShrink:0}}>{(session.user.email||"?").charAt(0).toUpperCase()}</div>
         <div style={{flex:1,minWidth:0}}><b style={{display:"block",fontSize:15,color:t.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{session.user.email||"Sua conta"}</b>
-          <div style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:syncOk?t.textSec:t.red,marginTop:2}}><I d={IC.sync} s={12} c={syncOk?t.accent:t.red} sw={2.4}/>{syncOk?"sincronizado com a nuvem":"sem conexão — salvo neste aparelho"}</div></div>
+          <div style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:syncOk?t.textSec:t.red,marginTop:2}}><I d={IC.sync} s={12} c={syncOk?t.accent:t.red} sw={2.4}/>{syncOk?"Sincronizado com a nuvem":"Sem conexão — salvo neste aparelho"}</div></div>
         <button onClick={logout} style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:12,fontWeight:700,padding:"7px 12px",borderRadius:100,border:"none",background:t.cardAlt,color:t.textSec}}><I d={IC.logout} s={13} c={t.textSec}/>Sair</button>
       </div>
       <div style={sec}>PLANO</div>
       <div style={grp}>
-        {row(IC.calendar,"Início e duração",`${st?ddmm(st)+"/"+st.getFullYear():"—"} · ${TOTAL} semanas${pe?` · termina ${ddmm(pe.end)}`:""}`,()=>setShowPlan(true),undefined,{first:true})}
-        {row(IC.layers,"Fases",numPhases?`Fase atual: ${phases[curPh]?.name}`:"Sem fases — progresso linear",()=>setShowPlan(true))}
+        {row(IC.calendar,"Início e duração",`${st?ddmm(st)+"/"+st.getFullYear():"—"} · ${TOTAL} semanas${pe?` · Termina ${ddmm(pe.end)}`:""}`,()=>setShowPlan("dates"),undefined,{first:true})}
+        {row(IC.layers,"Fases",numPhases?`Fase atual: ${phases[curPh]?.name}`:"Sem fases — progresso linear",()=>setShowPlan("phases"))}
         {numPhases>0&&<div style={{padding:"0 16px 14px"}}>{phaseBar(curPh)}</div>}
-        {row(IC.hourglass,"Compensar faltas","Não expira enquanto houver treino pendente",null,toggle)}
+        {row(IC.hourglass,"Compensar faltas","O prazo se estende quando você falta",null,toggle)}
       </div>
       <div style={sec}>APARÊNCIA</div>
       <div style={grp}>{row(IC.contrast,"Tema",null,null,<Seg width={200} value={state.theme||"system"} onChange={v=>setState(p=>({...p,theme:v}))} opts={[["light","Claro"],["dark","Escuro"],["system","Sistema"]]}/>,{first:true})}</div>
       <div style={sec}>DADOS</div>
       <div style={grp}>
-        {row(IC.download,"Exportar planilha (CSV)",null,exportCSV,undefined,{first:true})}
+        {row(IC.download,"Exportar planilha",null,exportCSV,undefined,{first:true})}
         {row(IC.clipboard,"Importar treino de texto",null,()=>setShowPaste(true))}
         {row(IC.archive,"Backups",bk.length?`${bk.length} cópia${bk.length>1?"s":""} · última ${lastBk.toLocaleDateString("pt-BR")} ${lastBk.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`:"Nenhum backup ainda",bk.length?()=>setShowBackups(true):null)}
       </div>

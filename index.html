@@ -2,42 +2,32 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f8f9fa" id="tc">
 <title>RepForge</title>
 <link rel="icon" type="image/png" href="icon-512.png">
 <link rel="apple-touch-icon" href="icon-512.png">
-<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22RepForge%22%2C%22short_name%22%3A%22RepForge%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22minimal-ui%22%2C%22background_color%22%3A%22%230a0a0f%22%2C%22theme_color%22%3A%22%230a0a0f%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22icon-512.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
+<link rel="manifest" href="manifest.webmanifest">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script>window._sb=window.supabase.createClient('https://seekddfmpgipejdabhqt.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlZWtkZGZtcGdpcGVqZGFiaHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3OTQ1MTUsImV4cCI6MjA5NjM3MDUxNX0.mBKscqvWYoYhESc9L1kHsWFbXRr2StDKSIxBJsYmt_g');</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js"></script>
+<script>window._sb=window.supabase&&window.supabase.createClient('https://seekddfmpgipejdabhqt.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlZWtkZGZtcGdpcGVqZGFiaHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3OTQ1MTUsImV4cCI6MjA5NjM3MDUxNX0.mBKscqvWYoYhESc9L1kHsWFbXRr2StDKSIxBJsYmt_g');</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body,#root{min-height:100vh;min-height:100dvh}
-body{font-family:'Inter',system-ui,sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',system-ui,sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased;touch-action:manipulation}/* pinch zoom allowed, no double-tap zoom */
 ::-webkit-scrollbar{display:none}
 button{font-family:inherit;cursor:pointer}
-input,select{font-family:inherit}
+input,select,textarea{font-family:inherit;font-size:16px!important}/* <16px makes iOS zoom in on focus */
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .fi{animation:fadeIn .25s ease-out}
 .no-scroll{overflow:hidden!important;position:fixed!important;width:100%!important}
 </style>
 <script>
-// Offline support: pre-cache resources + register SW if sw.js exists
-(async()=>{if(!('caches' in window))return;
-  try{const c=await caches.open('repforge-static');
-    const urls=[
-      'https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.9/babel.min.js',
-      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js'];
-    for(const u of urls){try{const r=await fetch(u);if(r.ok)await c.put(u,r)}catch{}}
-  }catch{}
-  if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
-})();
+// Offline support: sw.js pre-caches the app shell and CDN libs
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(e=>console.error('Falha ao registrar o service worker',e));
 </script>
 </head>
 <body>
@@ -54,7 +44,8 @@ const themes={
   dark:{bg:"#0a0a0f",card:"#141420",cardAlt:"#1a1a2e",border:"#2a2a3e",text:"#e8eaed",textSec:"#9aa0a6",textTer:"#5f6368",accent:"#8ab4f8",accentBg:"rgba(66,133,244,.12)",accentDark:"#4285f4",green:"#81c995",greenBg:"rgba(52,168,83,.1)",greenBorder:"rgba(52,168,83,.25)",red:"#f28b82",redBg:"rgba(234,67,53,.1)",yellow:"#fdd663",yellowBg:"rgba(253,214,99,.1)",overlay:"rgba(0,0,0,.75)",timerBg:"rgba(10,10,15,.97)",timerCircle:"#0a0a0f",gradBot:"#0a0a0f",inputBg:"#1a1a2e"},
 };
 const TC=createContext(themes.light);const useT=()=>useContext(TC);
-function useBodyLock(l){useEffect(()=>{if(l)document.body.classList.add("no-scroll");else document.body.classList.remove("no-scroll");return()=>document.body.classList.remove("no-scroll")},[l])}
+function useBodyLock(l){useEffect(()=>{if(!l)return;const b=document.body,y=window.scrollY;b.style.top=`-${y}px`;b.classList.add("no-scroll");// position:fixed would jump to the top
+  return()=>{b.classList.remove("no-scroll");b.style.top="";window.scrollTo(0,y)}},[l])}
 
 const DEFAULT_DATA={
   "Peito, Costas, Ombro e Bíceps":{dayLabel:"Ter",dayOfWeek:2,exercises:[
@@ -112,35 +103,78 @@ function genLadder(start,step,n){return Array.from({length:n},(_,i)=>Math.round(
 const WEIGHT_RULES={
   // Selectorized stack on imported machines/cables: 11.8kg start, 6.8kg steps, full stack
   "sf-stack":{start:11.8,step:6.8,count:15},
-  // Plate/barbell load (anilhas/barra), 2.5kg steps, 2.5→100kg
-  "sf-plate":{start:2.5,step:2.5,count:40},
+  // Plate/barbell load (anilhas/barra), 2.5kg steps from 2.5kg; open: plates keep stacking, so the
+  // ladder always reaches 20 steps past the current weight (≥100kg)
+  "sf-plate":{start:2.5,step:2.5,count:40,open:true},
 };
-function ruleLadder(rule){const r=WEIGHT_RULES[rule];return r?genLadder(r.start,r.step,r.count):null}
+const OPEN_HEADROOM=20;
+function ruleLadder(rule,cur){const r=WEIGHT_RULES[rule];if(!r)return null;
+  const n=r.open&&cur!=null?Math.max(r.count,Math.ceil((cur-r.start)/r.step)+1+OPEN_HEADROOM):r.count;
+  return genLadder(r.start,r.step,n)}
 // Snap a weight to the nearest value on a rule's ladder
-function snapToRule(weight,rule){const l=ruleLadder(rule);if(!l||weight==null)return weight;return l.reduce((a,b)=>Math.abs(b-weight)<Math.abs(a-weight)?b:a)}
+function snapToRule(weight,rule){const l=ruleLadder(rule,weight);if(!l||weight==null)return weight;return l.reduce((a,b)=>Math.abs(b-weight)<Math.abs(a-weight)?b:a)}
 function getOpts(type,cur,rule){
-  const rl=ruleLadder(rule);
+  const rl=ruleLadder(rule,cur);
   if(rl){const o=[...rl];if(cur!=null&&!o.includes(cur)){o.push(cur);o.sort((a,b)=>a-b)}return o}// rule: full spectrum, start→end
   const l=WEIGHTS[type]||[];if(!l.length)return[];const b=cur||0;const o=l.filter(w=>w>=Math.max(0,b-25)&&w<=b+35);if(cur&&!o.includes(cur))o.push(cur);o.sort((a,b)=>a-b);return o;
 }
 
+// Snap a computed weight onto what the equipment offers (rule ladder, else the type's list)
+function snapWeight(w,ex,dir=0){if(w==null)return w;const l=ex?.rule?ruleLadder(ex.rule,w):WEIGHTS[ex?.type];if(!l?.length)return w;
+  if(dir>0)return l.find(x=>x>=w)??l[l.length-1];
+  if(dir<0)return[...l].reverse().find(x=>x<=w)??l[0];
+  return l.reduce((a,b)=>Math.abs(b-w)<Math.abs(a-w)?b:a)}
+// Local-calendar dates: "YYYY-MM-DD" strings parsed with new Date() are UTC and show a day early in Brazil
+const ymdLocal=d=>{const x=new Date(d);return isNaN(x)?"":`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`};
+const parseYmd=v=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||"");return m?new Date(+m[1],+m[2]-1,+m[3]):null};
+// Put a workout in wkOrder exactly once: right after the last one on the same or an earlier weekday (others keep their manual order), or last when sort=false
+// Plan end, derived (never stored): start + weeks. With "compensar faltas" the plan cannot end while sessions remain —
+// the end is the later of that date and when the remaining sessions fit (each workout once a week from its next weekday).
+function planEnd(state,WK){
+  const start=parseYmd(ymdLocal(state.startDate));if(!start)return null;
+  const total=state.total||16;const base=new Date(start);base.setDate(base.getDate()+total*7);
+  if(!state.compensate)return{end:base,extra:0};
+  const today=new Date();today.setHours(0,0,0,0);const todayKey=ymdLocal(today);let last=base;
+  WK.forEach(k=>{
+    const w=state.w[k],dow=state.td[k]?.dayOfWeek;if(!w||dow==null)return;
+    const left=w.sessions.slice(0,total).filter(x=>!x.status).length;if(!left)return;
+    const d=new Date(today);d.setDate(d.getDate()+(dow-today.getDay()+7)%7);
+    // already trained this workout today → its next session is next week
+    if(+d===+today&&w.sessions.some(x=>x.status&&x.at&&ymdLocal(x.at)===todayKey))d.setDate(d.getDate()+7);
+    d.setDate(d.getDate()+(left-1)*7);
+    if(d>last)last=d;
+  });
+  return{end:last,extra:Math.round((last-base)/86400000)};
+}
+// fields of the old stored-compensation model (endDate is now derived by planEnd)
+function dropLegacy(s){if(s){delete s.endDate;delete s.compDays;delete s.compCheckedTo}return s}
+// wkOrder cleaned: no duplicates or deleted workouts, missing ones appended
+function normOrder(s){const keys=Object.keys(s.td);const v=[...new Set(s.wkOrder||[])].filter(k=>keys.includes(k));return[...v,...keys.filter(k=>!v.includes(k))]}
+function addToOrder(n,name,sort=true){const o=(n.wkOrder||Object.keys(n.td)).filter(k=>k!==name);const d=n.td[name]?.dayOfWeek??0;let at=o.length;if(sort){let last=-1;o.forEach((k,x)=>{if((n.td[k]?.dayOfWeek??0)<=d)last=x});at=last+1}o.splice(at,0,name);n.wkOrder=o}
+
 const DAYS=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+const SS_GROUPS=["A","B","C","D"];// super set groups
+const SETS_MAX=10;
 const DEF_PHASES=[{name:"Entrada leve",color:"#4285f4",weeks:2},{name:"Base",color:"#34a853",weeks:2},{name:"Deload",color:"#fbbc04",weeks:1},{name:"Progressão",color:"#34a853",weeks:4},{name:"Deload final",color:"#ea4335",weeks:1}];
 const PALETTE=["#4285f4","#34a853","#fbbc04","#ea4335","#ab47bc","#00acc1","#ff7043","#8d6e63","#78909c","#5c6bc0"];
 
 // Normalize rest values to seconds (number)
 function normalizeRest(r){
-  if(!r&&r!==0)return 90;
-  const str=String(r).trim().toLowerCase().replace(/–/g,"-").replace(/—/g,"-");
+  if(r==null||r==="")return 90;
+  // numbers always mean seconds (defaults, EditModal and the importer all store seconds)
+  if(typeof r==="number")return Math.max(Math.round(r)||90,10);
+  // legacy free text: "90s", "2 min", "1,5 min", "1:30", "1m30s"; a bare "2" is read as minutes
+  const str=String(r).trim().toLowerCase().replace(/[–—]/g,"-").replace(/,/g,".");
   let v=90;
-  if(str.includes("min")){const m=str.match(/(\d+)/);v=(parseInt(m?.[1])||2)*60}
-  else if(/\d\s*s/.test(str)){const m=str.match(/(\d+)/);v=parseInt(m?.[1])||90}
-  else{const n=parseFloat(str);if(!isNaN(n)&&n>0)v=n<=10?Math.round(n*60):Math.round(n);
-  else{const m=str.match(/(\d+)/);if(m){const x=parseInt(m[1]);v=x<=10?x*60:x}}}
-  return Math.max(v,10);// minimum 10 seconds
+  const mmss=str.match(/^(\d+)\s*(?::|'|m(?:in(?:utos?)?)?)\s*(?:e\s*)?(\d+)\s*(?:s|seg(?:undos?)?|"|'')?$/);
+  if(mmss)v=parseInt(mmss[1])*60+parseInt(mmss[2]);
+  else if(/\d\s*m(?:in)?\b/.test(str)){const m=str.match(/(\d+(?:\.\d+)?)/);v=Math.round(parseFloat(m[1])*60)}
+  else if(/\d\s*s/.test(str)){const m=str.match(/(\d+)/);v=parseInt(m[1])}
+  else{const m=str.match(/(\d+(?:\.\d+)?)/);if(m){const x=parseFloat(m[1]);v=x<=10?Math.round(x*60):Math.round(x)}}
+  return Math.max(v||90,10);// minimum 10 seconds
 }
 function migrateRests(state){
-  if(state.td){Object.keys(state.td).forEach(k=>{state.td[k].exercises.forEach(ex=>{ex.rest=normalizeRest(ex.rest)})})}
+  if(state.td){Object.keys(state.td).forEach(k=>{(state.td[k]?.exercises||[]).forEach(ex=>{ex.rest=normalizeRest(ex.rest)})})}
   return state;
 }
 // One-off: bring saved state in line with the updated SmartFit default program.
@@ -180,30 +214,62 @@ function migrateSmartFit(state){
   return state;
 }
 
-const SK="rf_v7";
-const ld=()=>{try{const r=localStorage.getItem(SK);if(r)return migrateSmartFit(migrateRests(JSON.parse(r)))}catch{}return null};
-const sv=s=>{try{localStorage.setItem(SK,JSON.stringify(s))}catch{}};
-const BACKUP_KEY="rf_backup";const BACKUP_MAX=3;
-function saveBackup(state){try{const backups=JSON.parse(localStorage.getItem(BACKUP_KEY)||"[]");backups.unshift({at:new Date().toISOString(),data:state});while(backups.length>BACKUP_MAX)backups.pop();localStorage.setItem(BACKUP_KEY,JSON.stringify(backups))}catch{}}
-function getBackups(){try{return JSON.parse(localStorage.getItem(BACKUP_KEY)||"[]")}catch{return[]}}
-function restoreBackup(idx){try{const backups=getBackups();if(backups[idx])return backups[idx].data}catch{}return null}
+const SK="rf_v7";const BACKUP_KEY="rf_backup";const BACKUP_MAX=3;
+// Local data is scoped per account (rf_v7_<uid>) so another login on the same phone never inherits it
+let activeUid=null;let loadIssue=null;
+const scopedKey=base=>activeUid?`${base}_${activeUid}`:base;
+function readScoped(base){
+  const k=scopedKey(base);let r=localStorage.getItem(k);
+  // adopt pre-scoping data once, then drop the shared key
+  if(r==null&&activeUid){const legacy=localStorage.getItem(base);if(legacy!=null){localStorage.setItem(k,legacy);localStorage.removeItem(base);r=legacy}}
+  return r;
+}
+const ld=()=>{let r=null;
+  try{const own=localStorage.getItem(scopedKey(SK))!=null;r=readScoped(SK);
+    if(r){const st=dropLegacy(migrateSmartFit(migrateRests(JSON.parse(r))));if(!own&&activeUid)st._seed=true;return st}}
+  catch(e){console.error("Dados locais ilegíveis",e);loadIssue="Dados locais ilegíveis — usando a nuvem";
+    if(r){try{localStorage.setItem(scopedKey(SK)+"_corrupt_"+Date.now(),r)}catch(e2){console.error("Sem espaço para guardar a cópia dos dados ilegíveis",e2);loadIssue="Dados locais ilegíveis e sem espaço para guardar cópia"}}}
+  return null};
+const sv=s=>{try{localStorage.setItem(scopedKey(SK),JSON.stringify(s));return true}catch(e){console.error("Falha ao salvar localmente",e);return false}};
+function getBackups(){try{const b=JSON.parse(readScoped(BACKUP_KEY)||"[]");return Array.isArray(b)?b:[]}catch(e){console.error("Backups ilegíveis",e);return[]}}
+function saveBackup(state){
+  const backups=getBackups();backups.unshift({at:new Date().toISOString(),data:state});
+  while(backups.length>BACKUP_MAX)backups.pop();
+  // on quota errors drop the oldest backups until it fits
+  while(backups.length){try{localStorage.setItem(scopedKey(BACKUP_KEY),JSON.stringify(backups));return true}catch(e){if(backups.length===1){console.error("Sem espaço para backup",e);return false}backups.pop()}}
+  return false;
+}
+function restoreBackup(idx){const b=getBackups()[idx];return b?b.data:null}
 
-async function sbSave(state){try{const{data:{user}}=await supabase.auth.getUser();if(!user)return;await supabase.from('user_state').upsert({id:user.id,state,updated_at:new Date().toISOString()})}catch{}}
-async function sbLoad(){try{const{data,error}=await supabase.from('user_state').select('state').single();if(!error&&data?.state)return migrateSmartFit(migrateRests(JSON.parse(JSON.stringify(data.state))))}catch{}return null}
+// Cloud sync. Each state carries _ts (time of the last user edit); on load the newer copy wins.
+async function sbUid(){const{data:{session}}=await supabase.auth.getSession();return session?.user?.id||null}
+async function sbSave(state){
+  const uid=await sbUid();if(!uid)throw new Error("sem sessão");
+  const{error}=await supabase.from('user_state').upsert({id:uid,state,updated_at:new Date().toISOString()});
+  if(error)throw error;
+}
+async function sbLoad(){// → {ok:true,state} (state null when the account has no row yet) | {ok:false,error}
+  try{
+    const uid=await sbUid();if(!uid)return{ok:false,error:new Error("sem sessão")};
+    const{data,error}=await supabase.from('user_state').select('state').eq('id',uid).maybeSingle();
+    if(error)return{ok:false,error};
+    return{ok:true,state:data?.state?dropLegacy(migrateSmartFit(migrateRests(JSON.parse(JSON.stringify(data.state))))):null};
+  }catch(error){return{ok:false,error}}
+}
 
-function buildSessions(td,total){const w={};Object.keys(td).forEach(k=>{w[k]={cur:0,sessions:Array.from({length:total},()=>({status:null,exercises:td[k].exercises.map(e=>({weight:e.initWeight,sets:Array(e.sets).fill(false)}))}))};});return w}
+function buildSessions(td,total){const w={};Object.keys(td).forEach(k=>{w[k]={cur:0,sessions:Array.from({length:total},()=>({status:null,exercises:td[k].exercises.map(e=>({weight:e.initWeight,sets:Array(parseInt(e.sets)||1).fill(false)}))}))};});return w}
 function sortOrder(td){return Object.keys(td).sort((a,b)=>(td[a].dayOfWeek||0)-(td[b].dayOfWeek||0))}
 
 function init(){
   const s=ld();if(s&&s.v===7)return s;
-  const start=new Date();const end=new Date(start);end.setDate(end.getDate()+10*7);
-  return{v:7,td:JSON.parse(JSON.stringify(DEFAULT_DATA)),wkOrder:sortOrder(DEFAULT_DATA),w:buildSessions(DEFAULT_DATA,10),startDate:start.toISOString(),endDate:end.toISOString(),total:10,dark:window.matchMedia?.("(prefers-color-scheme:dark)").matches||false,phases:DEF_PHASES.map(p=>({...p}))};
+  const start=new Date();
+  return{v:7,td:JSON.parse(JSON.stringify(DEFAULT_DATA)),wkOrder:sortOrder(DEFAULT_DATA),w:buildSessions(DEFAULT_DATA,10),startDate:start.toISOString(),total:10,dark:window.matchMedia?.("(prefers-color-scheme:dark)").matches||false,phases:DEF_PHASES.map(p=>({...p})),_seed:true};// _seed: never compared with the cloud copy → loses to it
 }
 
 function getProgression(wk,exIdx,state){
   const w=state.w[wk];if(!w)return null;const cur=w.cur;
   let prevWeight=null;
-  for(let i=cur-1;i>=0;i--){const s=w.sessions[i];if(s.status==="done"&&s.exercises[exIdx]){prevWeight=s.exercises[exIdx].weight;break}}
+  for(let i=cur-1;i>=0;i--){const s=w.sessions[i];if(s.status==="done"&&s.exercises[exIdx]&&!s.exercises[exIdx].skipped){prevWeight=s.exercises[exIdx].weight;break}}
   const curWeight=w.sessions[cur]?.exercises[exIdx]?.weight;
   if(prevWeight==null||curWeight==null)return null;
   if(curWeight>prevWeight)return"up";if(curWeight<prevWeight)return"down";return"same";
@@ -238,7 +304,7 @@ const IC={
 let _actx=null;
 function getAudioCtx(){
   if(!_actx)_actx=new(window.AudioContext||window.webkitAudioContext)();
-  if(_actx.state==="suspended")_actx.resume().catch(()=>{});
+  if(_actx.state==="suspended")_actx.resume().catch(e=>console.warn("Áudio bloqueado",e));
   return _actx;
 }
 function playAlarm(){
@@ -261,7 +327,7 @@ function playAlarm(){
     };
     const t=ctx.currentTime;
     beep(t,880,0.15);beep(t+0.22,880,0.15);beep(t+0.44,1320,0.25);
-  }catch{}
+  }catch(e){console.warn("Alarme sem som",e)}
 }
 function playTick(){
   try{
@@ -272,9 +338,9 @@ function playTick(){
     const t=ctx.currentTime;
     g.gain.setValueAtTime(0.35,t);g.gain.exponentialRampToValueAtTime(0.01,t+0.06);
     o.start(t);o.stop(t+0.06);
-  }catch{}
+  }catch(e){console.warn("Tique sem som",e)}
 }
-document.addEventListener("pointerdown",()=>{try{getAudioCtx()}catch{}},{once:true});
+document.addEventListener("pointerdown",()=>{try{getAudioCtx()}catch(e){console.warn("Áudio indisponível",e)}},{once:true});
 
 // Wake Lock — keeps screen on during workout
 function useWakeLock(active){
@@ -282,7 +348,7 @@ function useWakeLock(active){
   useEffect(()=>{
     if(!active||!("wakeLock" in navigator))return;
     let released=false;
-    const acquire=async()=>{try{ref.current=await navigator.wakeLock.request("screen")}catch{}};
+    const acquire=async()=>{try{const l=await navigator.wakeLock.request("screen");if(released){l.release();return}ref.current=l}catch(e){console.warn("Wake lock indisponível",e)}};
     acquire();
     const h=()=>{if(!document.hidden&&!released)acquire()};
     document.addEventListener("visibilitychange",h);
@@ -300,6 +366,7 @@ function RestTimer({seconds,onClose}){
   const intervalRef=useRef(null);
   const bgTimeoutRef=useRef(null);
   const lastTickRef=useRef(-1);
+  const returnRef=useRef(null);
 
   const fireAlarm=useCallback(()=>{
     if(closedRef.current)return;closedRef.current=true;
@@ -308,13 +375,16 @@ function RestTimer({seconds,onClose}){
     if(!document.hidden){
       playAlarm();
       setRem(0);
-      setTimeout(onClose,1500);
+      onClose();
     } else {
       setRem(0);
-      const onReturn=()=>{if(!document.hidden){playAlarm();try{navigator.vibrate?.([300,150,300,150,400])}catch{};document.removeEventListener("visibilitychange",onReturn);setTimeout(onClose,1500)}};
+      const onReturn=()=>{if(!document.hidden){playAlarm();try{navigator.vibrate?.([300,150,300,150,400])}catch{};document.removeEventListener("visibilitychange",onReturn);returnRef.current=null;onClose()}};
+      returnRef.current=onReturn;
       document.addEventListener("visibilitychange",onReturn);
     }
   },[onClose]);
+  // a timer replaced by a new one must not keep a pending "on return" close around
+  useEffect(()=>()=>{if(returnRef.current)document.removeEventListener("visibilitychange",returnRef.current)},[]);
 
   // Background setTimeout — fires alarm even when tab is hidden
   useEffect(()=>{
@@ -392,7 +462,7 @@ function RestTimer({seconds,onClose}){
 function WP({value,type,rule,onChange}){
   const t=useT();const ref=useRef(null);const opts=getOpts(type,value,rule);
   const[editing,setEditing]=useState(false);
-  useEffect(()=>{if(ref.current&&value!=null&&!editing){const i=opts.indexOf(value);if(i>=0){const el=ref.current.children[i];if(el)el.scrollIntoView({inline:"center",behavior:"smooth"})}}},[value]);
+  useEffect(()=>{if(ref.current&&value!=null&&!editing){const i=opts.indexOf(value);if(i>=0){const el=ref.current.children[i];if(el)el.scrollIntoView({inline:"center",block:"nearest",behavior:"smooth"})}}},[value]);
   return(
     <div style={{marginTop:8}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
@@ -425,7 +495,7 @@ function ExCard({ex,data,onUpdate,onRest,prog,idx,totalEx,autoOpen}){
   const prevAll=useRef(all);
   const pR=s=>normalizeRest(s);
   const tag=data.tag||null;
-  const MAX_SETS=5;
+  const MAX_SETS=SETS_MAX;
 
   useEffect(()=>{if(autoOpen&&!all&&!skipped&&!open)setOpen(true)},[autoOpen,all,skipped]);
   useEffect(()=>{if(all&&!prevAll.current&&open){setTimeout(()=>setOpen(false),400)}prevAll.current=all;},[all]);
@@ -445,12 +515,13 @@ function ExCard({ex,data,onUpdate,onRest,prog,idx,totalEx,autoOpen}){
       const dw=curSets.map((_,i)=>i===0?data.weight:null);
       onUpdate({...data,tag:newTag,dropWeights:dw});
     } else {
-      const nd={...data,tag:newTag};delete nd.dropWeights;onUpdate(nd);
+      const nd={...data,tag:newTag};delete nd.dropWeights;if(newTag!=="superset")delete nd.ssGroup;onUpdate(nd);
     }
   };
+  const ssGroup=data.ssGroup||SS_GROUPS[0];
   const cycleTag=()=>{const tags=[null,"superset","dropset"];const cur=tags.indexOf(tag);setTag(tags[(cur+1)%tags.length])};
 
-  const tagLabel=tag==="superset"?"⚡ Super Set":tag==="dropset"?"🔻 Drop Set":null;
+  const tagLabel=tag==="superset"?`⚡ Super Set ${ssGroup}`:tag==="dropset"?"🔻 Drop Set":null;
   const tagColor=tag==="superset"?t.yellow:tag==="dropset"?"#ab47bc":null;
   const tagDesc=tag==="superset"?"Sem descanso entre séries":tag==="dropset"?"Peso reduzido a cada série":null;
 
@@ -481,7 +552,7 @@ function ExCard({ex,data,onUpdate,onRest,prog,idx,totalEx,autoOpen}){
         </div>
       </div>
       {open&&!skipped&&<div style={{marginTop:14}}>
-        {(ex.rule||WEIGHTS[ex.type]?.length>0)&&tag!=="dropset"&&<WP value={data.weight} type={ex.type} rule={ex.rule} onChange={w=>onUpdate({...data,weight:w})}/>}
+        {(ex.rule||WEIGHTS[ex.type]?.length>0)&&<WP value={data.weight} type={ex.type} rule={ex.rule} onChange={w=>onUpdate({...data,weight:w,...(tag==="dropset"&&data.dropWeights?{dropWeights:[w,...data.dropWeights.slice(1)]}:{})})}/>}
         <div style={{marginTop:12}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
             <div style={{fontSize:10,color:t.textSec,fontWeight:600,letterSpacing:1.5}}>SÉRIES</div>
@@ -511,7 +582,11 @@ function ExCard({ex,data,onUpdate,onRest,prog,idx,totalEx,autoOpen}){
         </div>
         <div style={{display:"flex",gap:6,marginTop:12,alignItems:"center",flexWrap:"wrap"}}>
           <button onClick={cycleTag} style={{padding:"6px 12px",borderRadius:100,border:`1px solid ${tag?tagColor+"55":t.border}`,background:tag?tagColor+"18":t.card,color:tag?tagColor:t.textSec,fontSize:11,fontWeight:600}}>{tag==="superset"?"⚡ Super Set":tag==="dropset"?"🔻 Drop Set":"Normal"}</button>
-          {tagDesc&&<span style={{fontSize:10,color:t.textTer,fontStyle:"italic"}}>{tagDesc}</span>}
+          {tag==="superset"?<div style={{display:"flex",alignItems:"center",gap:4}}>
+            <span style={{fontSize:10,color:t.textTer}}>Grupo</span>
+            {SS_GROUPS.map(g=><button key={g} aria-label={`Grupo ${g}`} onClick={()=>onUpdate({...data,ssGroup:g})} style={{width:26,height:26,borderRadius:8,border:g===ssGroup?`2px solid ${t.yellow}`:`1px solid ${t.border}`,background:g===ssGroup?t.yellow+"22":t.card,color:g===ssGroup?t.yellow:t.textSec,fontSize:11,fontWeight:700,padding:0}}>{g}</button>)}
+          </div>
+          :tagDesc&&<span style={{fontSize:10,color:t.textTer,fontStyle:"italic"}}>{tagDesc}</span>}
           <button onClick={toggleSkip} style={{padding:"6px 12px",borderRadius:100,border:`1px solid ${t.border}`,background:t.card,color:t.textSec,fontSize:11,fontWeight:500,marginLeft:"auto"}}>Pular</button>
         </div>
         <div ref={endRef} style={{height:1,scrollMarginBottom:120}}/>
@@ -536,12 +611,12 @@ function EditModal({td,wk,exIdx,onSave,onDelete,onClose,isNew,allTypes}){
     <BottomSheet onClose={onClose}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
         <h2 style={{fontSize:18,fontWeight:700,color:t.text}}>{isNew?"Novo exercício":"Editar exercício"}</h2>
-        <button onClick={onClose} style={{background:t.cardAlt,border:"none",borderRadius:12,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.close} s={18} c={t.textSec}/></button>
+        <button onClick={onClose} aria-label="Fechar" style={{background:t.cardAlt,border:"none",borderRadius:12,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.close} s={18} c={t.textSec}/></button>
       </div>
       <label style={lbl}>Exercício</label>
       <input value={name} onChange={e=>setName(e.target.value)} style={inp} autoComplete="off" placeholder="Ex: Supino reto com barra"/>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-        <div><label style={lbl}>Séries</label><input type="number" value={sets} onChange={e=>setSets(e.target.value===""?"":parseInt(e.target.value)||"")} min="1" max="10" style={inp} autoComplete="off" placeholder="Ex: 3"/></div>
+        <div><label style={lbl}>Séries</label><input type="number" value={sets} onChange={e=>setSets(e.target.value===""?"":parseInt(e.target.value)||"")} min="1" max={SETS_MAX} style={inp} autoComplete="off" placeholder="Ex: 3"/></div>
         <div><label style={lbl}>Repetições</label><input value={reps} onChange={e=>setReps(e.target.value)} style={inp} autoComplete="off" placeholder="Ex: 8–12"/></div>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
@@ -553,14 +628,65 @@ function EditModal({td,wk,exIdx,onSave,onDelete,onClose,isNew,allTypes}){
         {eqTypes.map(tp=><button key={tp} onClick={()=>setType(tp)} style={{padding:"8px 14px",borderRadius:100,border:tp===type?`2px solid ${t.accent}`:`1px solid ${t.border}`,background:tp===type?t.accentBg:t.card,color:tp===type?t.accentDark:t.textSec,fontSize:12,fontWeight:tp===type?600:400,textTransform:"capitalize"}}>{tp}</button>)}
       </div>
       <div style={{display:"flex",gap:10}}>
-        {!isNew&&<button onClick={()=>{onDelete();onClose()}} style={{flex:1,padding:14,borderRadius:14,background:t.redBg,border:"none",color:t.red,fontSize:14,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}><I d={IC.trash} s={16} c={t.red}/>Excluir</button>}
-        <button onClick={()=>{if(!name.trim()||!sets)return;onSave({name,sets:parseInt(sets),reps:reps||"8–12",rest:rest||90,initWeight:weight,type,...(ex.rule?{rule:ex.rule}:{})});onClose()}} style={{flex:2,padding:14,borderRadius:14,background:t.accent,border:"none",color:"#fff",fontSize:14,fontWeight:700}}>Salvar</button>
+        {!isNew&&<button onClick={()=>{if(!confirm(`Excluir "${ex.name}"? O histórico dele em todas as sessões também será apagado.`))return;onDelete();onClose()}} style={{flex:1,padding:14,borderRadius:14,background:t.redBg,border:"none",color:t.red,fontSize:14,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}><I d={IC.trash} s={16} c={t.red}/>Excluir</button>}
+        <button onClick={()=>{if(!name.trim()||!sets)return;onSave({name,sets:Math.min(Math.max(parseInt(sets)||1,1),SETS_MAX),reps:reps||"8–12",rest:Math.max(rest||90,10),initWeight:weight,type,...(ex.rule&&type===ex.type?{rule:ex.rule}:{})});onClose()}} style={{flex:2,padding:14,borderRadius:14,background:t.accent,border:"none",color:"#fff",fontSize:14,fontWeight:700}}>Salvar</button>
       </div>
     </BottomSheet>
   );
 }
 
-function NewWorkoutModal({onSave,onClose}){
+// Parse pasted text into exercises (used by the import preview and the import itself)
+function parseExerciseText(raw){
+  const norm=raw.replace(/^([^\t\n]+)\t+(\d{1,2})\t+(\d[^\t\n]*?)(?=\t|$)/gm,"$1 $2x$3").replace(/\t/g,"  ").replace(/[|;]/g," ");
+  const lines=norm.split(/\n/).map(l=>l.trim()).filter(l=>l&&!/^[-=#*_]{2,}$/.test(l));
+  const exs=[];
+  for(const line0 of lines){
+    if(!/\d/.test(line0))continue;
+    // decimal comma only before a unit (12,5kg · 1,5 min) so rep lists like 4x12,10,8 stay intact
+    const line=line0.replace(/^\[[^\]]*\]\s*[^:]{1,40}:\s*/,"").replace(/[*_~]/g,"").replace(/^(?:\d{1,2}(?:[.)]|\s*[-–]\s)|[•●▪◦‣·\-–—]|\p{Extended_Pictographic}\uFE0F?)\s*/u,"")
+      .replace(/(\d),(\d+)\s*(kg|min)/gi,"$1.$2$3")
+      .replace(/(\d+)\s*s[ée]ries?\s*(?:de|x|×)?\s*(\d+(?:\s*(?:[-–]|a)\s*\d+)?)\s*(?:(?:rep(?:eti[çc][õo]es|s)?)\.?)?(?![\wáéíóúãõç])/i,"$1x$2")
+      .replace(/([xX×]\s*\d+)\s+a\s+(\d+)\b/g,"$1-$2")
+      .replace(/\b(\d{1,2})(?:\s*[:']\s*|\s*min(?:utos?)?|m)(\d{2})(?![\d.,]|\s*kg)\s*(?:''|"|s|seg)?(?![\wáéíóúãõ])/gi,(_,a,b)=>(+a*60+ +b)+"s")
+      .replace(/\b(\d{2,3})\s*(?:''|"|″)/g,"$1s")
+      .replace(/(\d)\s*min(?:utos?)\b/gi,"$1min");
+    let sets=3,reps="8-12",rest=90,weight=null,type="máquina";
+    // 1) sets x reps FIRST (before rest, to avoid "30-45s" being eaten). Text before it is the name area,
+    //    text after it is where a bare rest number may sit ("Leg press 45 4x10 90" → 45 is part of the name)
+    let head=line,tail="",hasSM=false;
+    const sm=line.match(/(\d+)\s*[xX×]\s*([^\sxX×()]+)(?:\s*[xX×]\s*(\d+(?:\.\d+)?)\s*(?:kg)?(?![\w.]))?/);if(sm&&sm[3])weight=parseFloat(sm[3]);
+    if(sm){hasSM=true;sets=parseInt(sm[1])||3;reps=sm[2].replace(/[,;]+$/,"").replace(/,/g,"/");head=line.slice(0,sm.index);tail=line.slice(sm.index+sm[0].length)}
+    if(hasSM){const ru=tail.match(/^\s*(?:seg(?:undos?)?|s)\b/i);if(ru&&/^\d+(?:-\d+)?$/.test(reps)){reps+="s";tail=tail.slice(ru[0].length)}}
+    const take=re=>{let m=tail.match(re);if(m){tail=tail.replace(m[0]," ");return m}m=head.match(re);if(m){head=head.replace(m[0]," ");return m}return null};
+    // 2) weight
+    const wm=take(/(\d+(?:\.\d+)?)\s*kg\b/i);if(wm)weight=parseFloat(wm[1]);
+    // 3) rest with unit
+    const rm=take(/\b(\d+)\s*(?:seg(?:undos)?)\b/i);
+    const rms=rm?null:take(/\b(\d{2,3})\s*s\b(?![\wáéíóúãõ])/i);
+    const rmm=rm||rms?null:take(/(\d+(?:\.\d+)?)\s*min\b/i);
+    if(rm)rest=parseInt(rm[1]);else if(rms)rest=parseInt(rms[1]);else if(rmm&&parseFloat(rmm[1])<=5)rest=Math.round(parseFloat(rmm[1])*60);
+    // 4) bare number 30-300 as rest: after sets×reps, or the last token when there is none
+    else{const re=hasSM?/(?:^|[\s,])\s*(\d{2,3})(?=[\s,]|$)/:/(?:^|[\s,])\s*(\d{2,3})\s*$/;const src=hasSM?tail:head;const bn=src.match(re);
+      if(bn){const v=parseInt(bn[1]);if(v>=30&&v<=300){rest=v;if(hasSM)tail=tail.replace(bn[0]," ");else head=head.replace(bn[0]," ")}}}
+    let name=(head+" "+tail).replace(/\b(?:descanso|desc\.|intervalo|pausa)(?![\wáéíóúãõç])/gi," ");if(!hasSM&&/^\s*(treino|dia|semana|fase|bloco|segunda|ter[çc]a|quarta|quinta|sexta|s[áa]bado|domingo)\b/i.test(name))continue;
+    // guess equipment type
+    const nl=name.toLowerCase();
+    if(/halter|haltere|dumbbell/i.test(nl))type="halter";
+    else if(/barra|smith|supino.*barra|terra|rosca.*barra/i.test(nl))type="barra";
+    else if(/polia|cabo|corda|cross|face.?pull|pullover.*polia|triceps.*corda/i.test(nl))type="polia";
+    else if(/corpo|prancha|flexão|abdominal|plank/i.test(nl))type="corpo";
+    else if(/elástico|band|faixa/i.test(nl))type="elástico";
+    else if(/anilha/i.test(nl))type="anilha";
+    name=name.replace(/\(\s*\)|\[\s*\]/g," ").replace(/\s[·\-–—|,;:.]+(?=\s|$)/g," ").replace(/\s{2,}/g," ").trim().replace(/[\s·\-–—|,;:.(]+$/,"").replace(/^[\s·\-–—|,;:.)]+/,"").replace(/\s{2,}/g," ").trim();
+    if(!name||name.length<2)continue;
+    name=name.charAt(0).toUpperCase()+name.slice(1);
+    exs.push({name,sets,reps,rest,initWeight:weight,type});
+  }
+  return exs;
+}
+const fmtSec=r=>r>=60?`${Math.floor(r/60)}min${r%60?r%60+"s":""}`:r+"s";
+
+function NewWorkoutModal({existing=[],onSave,onClose}){
   const t=useT();const[name,setName]=useState("");const[day,setDay]=useState(1);
   const inp={width:"100%",padding:"12px 14px",borderRadius:12,border:`1px solid ${t.border}`,background:t.inputBg,color:t.text,fontSize:15,outline:"none",marginBottom:14};
   return(
@@ -574,7 +700,7 @@ function NewWorkoutModal({onSave,onClose}){
       </div>
       <div style={{display:"flex",gap:10}}>
         <button onClick={onClose} style={{flex:1,padding:14,borderRadius:14,background:t.cardAlt,border:"none",color:t.textSec,fontSize:14,fontWeight:500}}>Cancelar</button>
-        <button onClick={()=>{if(!name.trim())return;onSave(name.trim(),day);onClose()}} style={{flex:1,padding:14,borderRadius:14,background:t.accent,border:"none",color:"#fff",fontSize:14,fontWeight:700}}>Criar</button>
+        <button onClick={()=>{if(!name.trim())return;if(existing.includes(name.trim())){alert("Já existe um treino com esse nome");return}onSave(name.trim(),day);onClose()}} style={{flex:1,padding:14,borderRadius:14,background:t.accent,border:"none",color:"#fff",fontSize:14,fontWeight:700}}>Criar</button>
       </div>
     </Modal>
   );
@@ -667,34 +793,12 @@ function PasteImportModal({existingWorkouts,onImport,onClose}){
   const[target,setTarget]=useState("new");// "new" or existing workout name
   const[preview,setPreview]=useState([]);
 
-  const doPreview=(raw)=>{
-    setText(raw);
-    const norm=raw.replace(/\t/g,"  ").replace(/[|;]/g," ");
-    const lines=norm.split(/\n/).map(l=>l.trim()).filter(l=>l&&!/^[-=#*_]{2,}$/.test(l));
-    const exs=[];
-    for(const line of lines){
-      if(!/\d/.test(line))continue;
-      let name=line,sets=3,reps="8-12",rest=90,weight=null;
-      const sm=name.match(/(\d+)\s*[xX×]\s*(\S+)/);if(sm){sets=parseInt(sm[1])||3;reps=sm[2].replace(/[,;]/g,"");name=name.replace(sm[0],"");}
-      const wm=name.match(/(\d+\.?\d*)\s*kg\b/i);if(wm){weight=parseFloat(wm[1]);name=name.replace(wm[0],"");}
-      const rm=name.match(/\b(\d+)\s*(?:seg(?:undos)?)\b/i);
-      const rms=name.match(/\b(\d{2,3})\s*s\b(?![\wáéíóúãõ])/i);
-      const rmm=name.match(/\b(\d+)\s*min\b/i);
-      if(rm){rest=parseInt(rm[1]);name=name.replace(rm[0],"");}
-      else if(rms){rest=parseInt(rms[1]);name=name.replace(rms[0],"");}
-      else if(rmm){rest=parseInt(rmm[1])*60;name=name.replace(rmm[0],"");}
-      else{const bn=name.match(/(?:^|[\s,])\s*(\d{2,3})(?=[\s,]|$)/);if(bn){const v=parseInt(bn[1]);if(v>=30&&v<=300){rest=v;name=name.replace(bn[0],"");}}}
-      name=name.replace(/[·\-–—|,;]\s*$/,"").replace(/^\s*[·\-–—|,;]\s*/,"").replace(/\s{2,}/g," ").trim();
-      if(!name||name.length<2)continue;
-      name=name.charAt(0).toUpperCase()+name.slice(1);
-      exs.push({name,sets,reps,rest,weight});
-    }
-    setPreview(exs);
-  };
+  const doPreview=(raw)=>{setText(raw);setPreview(parseExerciseText(raw))};
 
   const doImport=()=>{
     const finalName=target==="new"?wkName.trim():target;
     if(!finalName){alert("Defina um nome para o treino");return}
+    if(target==="new"&&existingWorkouts.includes(finalName)){alert("Já existe um treino com esse nome — escolha-o em Destino para adicionar os exercícios");return}
     const count=onImport(text,finalName,target==="new"?dow:0);
     if(count)onClose();
   };
@@ -714,7 +818,7 @@ function PasteImportModal({existingWorkouts,onImport,onClose}){
         <div style={{maxHeight:140,overflowY:"auto",display:"flex",flexDirection:"column",gap:4}}>
           {preview.map((ex,i)=><div key={i} style={{fontSize:12,color:t.text,padding:"6px 10px",background:t.cardAlt,borderRadius:8}}>
             <span style={{fontWeight:600}}>{ex.name}</span>
-            <span style={{color:t.textSec,marginLeft:6}}>{ex.sets}×{ex.reps} · {ex.rest>=60?`${Math.floor(ex.rest/60)}min`:ex.rest+"s"}{ex.weight!=null?` · ${ex.weight}kg`:""}</span>
+            <span style={{color:t.textSec,marginLeft:6}}>{ex.sets}×{ex.reps} · {fmtSec(ex.rest)}{ex.initWeight!=null?` · ${ex.initWeight}kg`:""}</span>
           </div>)}
         </div>
       </div>}
@@ -745,7 +849,7 @@ function PasteImportModal({existingWorkouts,onImport,onClose}){
 function PlanModal({state,setState,onClose}){
   const t=useT();
   const[total,setTotal]=useState(state.total||"");
-  const[startD,setStartD]=useState(state.startDate?.slice(0,10)||"");
+  const[startD,setStartD]=useState(state.startDate?ymdLocal(state.startDate):"");
   const[phases,setPhases]=useState(JSON.parse(JSON.stringify(state.phases||[])));
   const[pickIdx,setPickIdx]=useState(null);
   const[compensate,setCompensate]=useState(state.compensate||false);
@@ -756,12 +860,15 @@ function PlanModal({state,setState,onClose}){
   const updatePhase=(i,field,val)=>{const c=[...phases];c[i]={...c[i],[field]:val};setPhases(c)};
   const totalPhaseWeeks=phases.reduce((a,p)=>a+(p.weeks||1),0);
   const apply=()=>{
-    const t2=parseInt(total)||16;
-    const s=new Date(startD);const e=new Date(s);e.setDate(e.getDate()+t2*7);
+    const t2=Math.min(52,Math.max(1,parseInt(total)||16));
+    const s=parseYmd(startD);if(!s){alert("Defina a data de início");return}
+    const lost=Object.keys(state.w||{}).filter(k=>state.w[k].sessions.slice(t2).some(x=>x.status));
+    if(lost.length&&!confirm(`Reduzir para ${t2} semanas apaga sessões já registradas (${lost.join(", ")}). Continuar?`))return;
+    const ph2=phases.map(p=>({...p,weeks:parseInt(p.weeks)||1}));
     setState(p=>{
       saveBackup(p);
-      const n={...JSON.parse(JSON.stringify(p)),startDate:s.toISOString(),endDate:e.toISOString(),total:t2,phases,compensate};
-      if(t2!==p.total){const newW={};Object.keys(n.td).forEach(k=>{const old=n.w[k];newW[k]={cur:Math.min(old?.cur||0,t2-1),sessions:Array.from({length:t2},(_,i)=>{if(old?.sessions[i])return old.sessions[i];return{status:null,exercises:n.td[k].exercises.map(e=>({weight:e.initWeight,sets:Array(e.sets).fill(false)}))}})};});n.w=newW;}
+      const n={...JSON.parse(JSON.stringify(p)),startDate:s.toISOString(),total:t2,phases:ph2,compensate};
+      if(t2!==p.total){const newW={};Object.keys(n.td).forEach(k=>{const old=n.w[k];newW[k]={cur:Math.min(old?.cur||0,t2-1),sessions:Array.from({length:t2},(_,i)=>{if(old?.sessions[i])return old.sessions[i];return{status:null,exercises:n.td[k].exercises.map(e=>({weight:e.initWeight,sets:Array(e.sets).fill(false)}))}})};});Object.values(newW).forEach(w=>{const f=w.sessions.findIndex(x=>!x.status);if(f>w.cur){const pv=w.sessions[f-1];w.sessions[f].exercises.forEach((e,q)=>{const b=pv.deload&&pv._origWeights?.[q]!=null?pv._origWeights[q]:pv.exercises[q]?.weight;if(b!=null)e.weight=b});w.cur=f}});n.w=newW;}
       return n;
     });onClose();
   };
@@ -788,22 +895,22 @@ function PlanModal({state,setState,onClose}){
           <button onClick={()=>setPickIdx(i)} style={{width:32,height:32,borderRadius:"50%",background:ph.color,border:`3px solid ${t.border}`,cursor:"pointer",flexShrink:0,padding:0,boxShadow:"inset 0 0 0 2px rgba(255,255,255,.3)"}}/>
           <input value={ph.name} onChange={e=>updatePhase(i,"name",e.target.value)} style={{...inp,marginBottom:0,flex:1}} placeholder="Nome da fase"/>
           <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0}}>
-            <input type="number" min="1" max="20" value={ph.weeks??""} onChange={e=>{const v=e.target.value;updatePhase(i,"weeks",v===""?"":Math.max(1,parseInt(v)||1))}} style={{width:40,height:32,borderRadius:8,border:`1px solid ${t.border}`,background:t.inputBg,color:t.text,fontSize:14,fontWeight:600,textAlign:"center",outline:"none",padding:0}}/>
+            <input type="number" min="1" max="20" value={ph.weeks??""} onChange={e=>{const v=e.target.value;updatePhase(i,"weeks",v===""?"":Math.max(1,parseInt(v)||1))}} onBlur={()=>{if(ph.weeks==="")updatePhase(i,"weeks",1)}} style={{width:40,height:32,borderRadius:8,border:`1px solid ${t.border}`,background:t.inputBg,color:t.text,fontSize:14,fontWeight:600,textAlign:"center",outline:"none",padding:0}}/>
             <span style={{fontSize:8,color:t.textTer,fontWeight:600,letterSpacing:.5}}>SEM</span>
           </div>
           <button onClick={()=>removePhase(i)} style={{background:"transparent",border:"none",borderRadius:10,width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,opacity:.5}}><I d={IC.close} s={14} c={t.textSec}/></button>
         </div>
       ))}
-      {phases.length>0&&totalPhaseWeeks!==parseInt(total)&&<p style={{fontSize:11,color:"#ea4335",marginBottom:8}}>⚠ Fases somam {totalPhaseWeeks} semanas, mas o plano tem {total} semanas</p>}
+      {phases.length>0&&totalPhaseWeeks!==(parseInt(total)||16)&&<p style={{fontSize:11,color:"#ea4335",marginBottom:8}}>⚠ Fases somam {totalPhaseWeeks} semanas, mas o plano tem {parseInt(total)||16} semanas</p>}
       <button onClick={addPhase} style={{width:"100%",padding:10,borderRadius:12,background:t.card,border:`1px dashed ${t.border}`,color:t.accent,fontSize:13,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:14}}><I d={IC.plus} s={14} c={t.accent}/>Adicionar fase</button>
       {phases.length===0&&<p style={{fontSize:12,color:t.textTer,marginBottom:14}}>Sem fases — progresso será linear.</p>}
 
-      {startD&&total&&<p style={{fontSize:12,color:t.textSec,marginTop:10,marginBottom:16}}>Término: {new Date(new Date(startD).getTime()+(parseInt(total)||16)*7*86400000).toLocaleDateString("pt-BR")}</p>}
+      {parseYmd(startD)&&total&&<p style={{fontSize:12,color:t.textSec,marginTop:10,marginBottom:16}}>Término: {(()=>{const e=parseYmd(startD);e.setDate(e.getDate()+(parseInt(total)||16)*7);return e.toLocaleDateString("pt-BR")})()}</p>}
 
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",marginBottom:16,borderTop:`1px solid ${t.border}`,borderBottom:`1px solid ${t.border}`}}>
         <div>
           <div style={{fontSize:13,fontWeight:600,color:t.text}}>Compensar faltas</div>
-          <div style={{fontSize:11,color:t.textSec,marginTop:2}}>Estende o prazo ao faltar um treino</div>
+          <div style={{fontSize:11,color:t.textSec,marginTop:2}}>O prazo acompanha as sessões que faltam — não expira enquanto houver treino pendente</div>
         </div>
         <button onClick={()=>setCompensate(!compensate)} style={{width:44,height:26,borderRadius:13,background:compensate?t.accent:t.cardAlt,border:"none",position:"relative",transition:"background .2s",cursor:"pointer",flexShrink:0}}>
           <div style={{width:20,height:20,borderRadius:10,background:"#fff",position:"absolute",top:3,left:compensate?21:3,transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.2)"}}/>
@@ -847,9 +954,9 @@ function LoadSlider({isDeload,onApply,onClose}){
 
 // ── PROGRESS CHART (per exercise) ─────────────────────────────
 function ProgressChart({wk,state,onClose}){
-  const t=useT();const td=state.td;const w=state.w[wk];
+  const t=useT();const[sel,setSel]=useState(0);const td=state.td;const w=state.w[wk];
   if(!w||!td[wk])return null;
-  const exs=td[wk].exercises;const[sel,setSel]=useState(0);
+  const exs=td[wk].exercises;
   const ex=exs[sel];if(!ex)return null;
 
   // gather data points: session index → weight
@@ -873,7 +980,7 @@ function ProgressChart({wk,state,onClose}){
   const path=pts.length>1?pts.map((p,i)=>`${i===0?"M":"L"}${toX(i).toFixed(1)} ${toY(p.w).toFixed(1)}`).join(" "):"";
   const area=path?path+` L${toX(pts.length-1).toFixed(1)} ${(chartH-padB).toFixed(1)} L${toX(0).toFixed(1)} ${(chartH-padB).toFixed(1)} Z`:"";
 
-  const delta=pts.length>=2?pts[pts.length-1].w-pts[0].w:0;
+  const delta=pts.length>=2?Math.round((pts[pts.length-1].w-pts[0].w)*10)/10:0;
   const deltaPct=pts.length>=2&&pts[0].w?((delta/pts[0].w)*100).toFixed(1):0;
 
   return(
@@ -885,7 +992,7 @@ function ProgressChart({wk,state,onClose}){
         {exs.map((e,i)=><button key={i} onClick={()=>setSel(i)} style={{padding:"6px 12px",borderRadius:100,border:i===sel?`2px solid ${t.accent}`:`1px solid ${t.border}`,background:i===sel?t.accentBg:t.card,color:i===sel?t.accentDark:t.textSec,fontSize:11,fontWeight:i===sel?600:400,whiteSpace:"nowrap",flexShrink:0}}>{e.name}</button>)}
       </div>
 
-      {pts.length<2?<div style={{textAlign:"center",padding:"30px 0",color:t.textTer,fontSize:13}}>Precisa de pelo menos 2 sessões concluídas para gerar gráfico</div>:(
+      {pts.length<2?<div style={{textAlign:"center",padding:"30px 0",color:t.textTer,fontSize:13}}>{w.sessions.filter(x=>x.status==="done"&&x.exercises[sel]&&!x.exercises[sel].skipped).length>=2?"Sem carga registrada neste exercício":"Precisa de pelo menos 2 sessões concluídas para gerar gráfico"}</div>:(
       <div>
         <div style={{display:"flex",gap:16,marginBottom:12}}>
           <div style={{background:t.cardAlt,borderRadius:12,padding:"10px 14px",flex:1}}>
@@ -921,12 +1028,13 @@ function WeeklySummary({state,onClose}){
   const mon=new Date(now);mon.setDate(mon.getDate()+diffMon);mon.setHours(0,0,0,0);
   const sun=new Date(mon);sun.setDate(sun.getDate()+6);sun.setHours(23,59,59,999);
 
+  const planStart=parseYmd(ymdLocal(state.startDate));
   const weekSessions=[];const weekSkipped=[];
   WK.forEach(k=>{
     if(!w[k])return;
     w[k].sessions.forEach((s,i)=>{
       if(!s.at)return;const d=new Date(s.at);if(d<mon||d>sun)return;
-      if(s.status==="done")weekSessions.push({wk:k,si:i,s,exs:td[k].exercises});
+      if(s.status==="done")weekSessions.push({wk:k,si:i,s,exs:td[k].exercises,day:d.getDay()});
       if(s.status==="skipped")weekSkipped.push({wk:k,si:i,s,day:d.getDay()});
     });
   });
@@ -946,9 +1054,9 @@ function WeeklySummary({state,onClose}){
         if(/supino|peito|peck|crucifixo/i.test(nl))muscleGroups.add("Peito");
         if(/puxada|remada|costas|pullover/i.test(nl))muscleGroups.add("Costas");
         if(/ombro|lateral|desenvolvimento|face.?pull/i.test(nl))muscleGroups.add("Ombros");
-        if(/bíceps|rosca/i.test(nl))muscleGroups.add("Bíceps");
-        if(/tríceps/i.test(nl))muscleGroups.add("Tríceps");
-        if(/leg|agachamento|extensora|flexora|panturrilha|terra|hip|abdut/i.test(nl))muscleGroups.add("Pernas");
+        if(/b[íi]ceps|rosca/i.test(nl))muscleGroups.add("Bíceps");
+        if(/tr[íi]ceps/i.test(nl))muscleGroups.add("Tríceps");
+        if(/leg|agachamento|extensora|flexora|panturrilha|terra|hip|abdut|stiff|afundo|b[úu]lgaro|p[ée]lvica|gl[úu]teo/i.test(nl))muscleGroups.add("Pernas");
         if(/prancha|abdominal|pallof/i.test(nl))muscleGroups.add("Core");
       }
     });
@@ -957,13 +1065,14 @@ function WeeklySummary({state,onClose}){
   const weekDays=["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
   const jsToIdx={1:0,2:1,3:2,4:3,5:4,6:5,0:6};
   const doneDays=new Set();const skippedDays=new Set();
-  weekSessions.forEach(({wk})=>{const dow=td[wk]?.dayOfWeek;if(dow!=null)doneDays.add(jsToIdx[dow])});
-  weekSkipped.forEach(({wk})=>{const dow=td[wk]?.dayOfWeek;if(dow!=null)skippedDays.add(jsToIdx[dow])});
+  weekSessions.forEach(({day})=>doneDays.add(jsToIdx[day]));
+  weekSkipped.forEach(({day})=>skippedDays.add(jsToIdx[day]));
   const plannedIdx=new Set();plannedDays.forEach(d=>plannedIdx.add(jsToIdx[d]));
   const todayIdx=jsToIdx[now.getDay()];
   // Map day index to workout name
-  const doneNames={};weekSessions.forEach(({wk})=>{const dow=td[wk]?.dayOfWeek;if(dow!=null)doneNames[jsToIdx[dow]]=wk});
-  const skippedNames={};weekSkipped.forEach(({wk})=>{const dow=td[wk]?.dayOfWeek;if(dow!=null)skippedNames[jsToIdx[dow]]=wk});
+  const addName=(m,day,wk)=>{const i=jsToIdx[day];m[i]=m[i]&&m[i]!==wk?m[i]+" + "+wk:wk};
+  const doneNames={};weekSessions.forEach(({wk,day})=>addName(doneNames,day,wk));
+  const skippedNames={};weekSkipped.forEach(({wk,day})=>addName(skippedNames,day,wk));
   const plannedNames={};WK.forEach(k=>{if(td[k]?.dayOfWeek!=null)plannedNames[jsToIdx[td[k].dayOfWeek]]=k});
 
   return(
@@ -982,7 +1091,7 @@ function WeeklySummary({state,onClose}){
         </div>
         <div style={{background:t.yellowBg,borderRadius:16,padding:14,textAlign:"center"}}>
           <div style={{fontSize:28,fontWeight:800,color:t.yellow}}>{totalVol>0?(totalVol>=1000?(totalVol/1000).toFixed(1)+"t":totalVol.toFixed(0)):0}</div>
-          <div style={{fontSize:11,color:t.textSec,fontWeight:500}}>Volume (kg)</div>
+          <div style={{fontSize:11,color:t.textSec,fontWeight:500}}>Carga × séries (kg)</div>
         </div>
         <div style={{background:t.redBg,borderRadius:16,padding:14,textAlign:"center"}}>
           <div style={{fontSize:28,fontWeight:800,color:t.red}}>{weekSkipped.length}</div>
@@ -996,7 +1105,8 @@ function WeeklySummary({state,onClose}){
           {weekDays.map((d,i)=>{
             const done=doneDays.has(i);const skipped=skippedDays.has(i);
             const planned=plannedIdx.has(i);const past=i<todayIdx;
-            const missed=planned&&past&&!done&&!skipped;
+            const beforePlan=planStart&&new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+i)<planStart;
+            const missed=planned&&past&&!done&&!skipped&&!beforePlan;
             const upcoming=planned&&!past&&!done&&!skipped;
             const wkName=doneNames[i]||skippedNames[i]||(planned?plannedNames[i]:null);
             let statusBg,statusColor,statusIcon,statusText,rowBg,dayColor;
@@ -1029,8 +1139,14 @@ function WeeklySummary({state,onClose}){
 
 
 function App({session}){
-  const[state,setState]=useState(init);
+  const uid=session.user.id;
+  const[state,setStateRaw]=useState(()=>{activeUid=uid;return init()});
+  // every edit stamps _ts so the newest copy (this device vs cloud) wins on load
+  const setState=useCallback(fn=>setStateRaw(p=>{const n=typeof fn==="function"?fn(p):fn;return n===p?p:{...n,_ts:Date.now()}}),[]);
   const[active,setActive]=useState(null);const[timer,setTimer]=useState(null);const[timerOrigin,setTimerOrigin]=useState(null);
+  // timer = {sec,id}: a fresh id per rest remounts RestTimer even when the same duration is tapped again
+  const timerRef=useRef(null);timerRef.current=timer;
+  const startRest=(idx,sec)=>{setFocusEx(null);setTimerOrigin(idx);setTimer({sec,id:Date.now()+Math.random()})};
   const[view,setView]=useState("home");const[hd,setHd]=useState(null);
   const[showPlan,setShowPlan]=useState(false);const[showNewWk,setShowNewWk]=useState(false);const[editEx,setEditEx]=useState(null);
   const[focusEx,setFocusEx]=useState(null);
@@ -1040,51 +1156,24 @@ function App({session}){
   const[newEquip,setNewEquip]=useState("");
   const[showPaste,setShowPaste]=useState(false);
   const[toast,setToast]=useState(null);
+  // sw.js says a new version was downloaded in the background
+  const[updateReady,setUpdateReady]=useState(false);
+  useEffect(()=>{if(!navigator.serviceWorker)return;const h=e=>{if(e.data?.type==="update")setUpdateReady(true)};navigator.serviceWorker.addEventListener("message",h);return()=>navigator.serviceWorker.removeEventListener("message",h)},[]);
   const[sessionNote,setSessionNote]=useState("");
   const[showChart,setShowChart]=useState(null);// workout name or null
   const[showSummary,setShowSummary]=useState(false);
   const[showBackups,setShowBackups]=useState(false);
   const sbTimerRef=useRef(null);
+  const stateRef=useRef(state);stateRef.current=state;
+  const syncRef=useRef({loaded:false,loading:false,pending:false,skipNext:false,failShown:false,localFailShown:false});
+  const showToast=useCallback(m=>{setToast(m);setTimeout(()=>setToast(null),2500)},[]);
 
   // Keep screen on during workout
   useWakeLock(view==="workout");
 
   // ── Parse pasted text into exercises ──
   const parseText=(raw,wkName,dow)=>{
-    const norm=raw.replace(/\t/g,"  ").replace(/[|;]/g," ");
-    const lines=norm.split(/\n/).map(l=>l.trim()).filter(l=>l&&!/^[-=#*_]{2,}$/.test(l));
-    const exs=[];
-    for(const line of lines){
-      if(!/\d/.test(line))continue;
-      let name=line,sets=3,reps="8-12",rest=90,weight=null,type="máquina";
-      // 1) extract sets x reps FIRST (before rest, to avoid "30-45s" being eaten)
-      const sm=name.match(/(\d+)\s*[xX×]\s*(\S+)/);
-      if(sm){sets=parseInt(sm[1])||3;reps=sm[2].replace(/[,;]/g,"");name=name.replace(sm[0],"");}
-      // 2) extract weight
-      const wm=name.match(/(\d+\.?\d*)\s*kg\b/i);
-      if(wm){weight=parseFloat(wm[1]);name=name.replace(wm[0],"");}
-      // 3) extract rest with unit
-      const rm=name.match(/\b(\d+)\s*(?:seg(?:undos)?)\b/i);
-      const rms=name.match(/\b(\d{2,3})\s*s\b(?![\wáéíóúãõ])/i);
-      const rmm=name.match(/\b(\d+)\s*min\b/i);
-      if(rm){rest=parseInt(rm[1]);name=name.replace(rm[0],"");}
-      else if(rms){rest=parseInt(rms[1]);name=name.replace(rms[0],"");}
-      else if(rmm){rest=parseInt(rmm[1])*60;name=name.replace(rmm[0],"");}
-      // 4) bare number 30-300 as rest
-      else{const bn=name.match(/(?:^|[\s,])\s*(\d{2,3})(?=[\s,]|$)/);if(bn){const v=parseInt(bn[1]);if(v>=30&&v<=300){rest=v;name=name.replace(bn[0],"");}}}
-      // guess equipment type
-      const nl=name.toLowerCase();
-      if(/halter|haltere|dumbbell/i.test(nl))type="halter";
-      else if(/barra|smith|supino.*barra|terra|rosca.*barra/i.test(nl))type="barra";
-      else if(/polia|cabo|corda|cross|face.?pull|pullover.*polia|triceps.*corda/i.test(nl))type="polia";
-      else if(/corpo|prancha|flexão|abdominal|plank/i.test(nl))type="corpo";
-      else if(/elástico|band|faixa/i.test(nl))type="elástico";
-      else if(/anilha/i.test(nl))type="anilha";
-      name=name.replace(/[·\-–—|,;]\s*$/,"").replace(/^\s*[·\-–—|,;]\s*/,"").replace(/\s{2,}/g," ").trim();
-      if(!name||name.length<2)continue;
-      name=name.charAt(0).toUpperCase()+name.slice(1);
-      exs.push({name,sets,reps,rest,initWeight:weight,type});
-    }
+    const exs=parseExerciseText(raw);
     if(!exs.length){alert("Nenhum exercício encontrado.\nExemplo:\nSupino reto com barra 4x6-8 120s 16kg");return;}
     setState(p=>{
       const n=JSON.parse(JSON.stringify(p));
@@ -1093,9 +1182,7 @@ function App({session}){
       }else{
         n.td[wkName]={dayLabel:DAYS[dow],dayOfWeek:dow,exercises:exs};
         n.w[wkName]={cur:0,sessions:Array.from({length:TOTAL},()=>({status:null,exercises:exs.map(e=>({weight:e.initWeight,sets:Array(e.sets).fill(false)}))}))};
-        const order=[...(n.wkOrder||Object.keys(n.td)),wkName];
-        order.sort((a,b)=>(n.td[a]?.dayOfWeek||0)-(n.td[b]?.dayOfWeek||0));
-        n.wkOrder=order;
+        addToOrder(n,wkName);
       }
       return n;
     });
@@ -1112,48 +1199,63 @@ function App({session}){
     const w2=state.w;
     Object.keys(td2).forEach(k=>{const wk=w2[k];if(!wk)return;wk.sessions.forEach((s,si)=>{if(!s.status)return;td2[k].exercises.forEach((ex,ei)=>{const d=s.exercises[ei];if(!d)return;rows.push([k,si+1,s.status,s.at?new Date(s.at).toLocaleDateString("pt-BR"):"",ex.name,d.weight??"",d.sets.filter(Boolean).length,ex.sets])})})});
     const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
-    const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`repforge-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(a.href);
+    const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");const u=URL.createObjectURL(blob);a.href=u;a.download=`repforge-${ymdLocal(new Date())}.csv`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);// Safari aborts the download if revoked synchronously
   };
 
   const dark=state.dark;const t=dark?themes.dark:themes.light;
-  useEffect(()=>{sv(state);clearTimeout(sbTimerRef.current);sbTimerRef.current=setTimeout(()=>sbSave(state),2000)},[state]);
-  useEffect(()=>{sbLoad().then(r=>{if(r&&r.v===7)setState(r)})},[]);
-
-  // Compensate missed days: extend endDate when a planned day passes without workout
+  // Cloud saves start only after the cloud copy was read, so a stale or empty device never overwrites it
+  const flushCloud=useCallback(function flush(){
+    clearTimeout(sbTimerRef.current);const sy=syncRef.current;if(!sy.loaded||!sy.pending||sy.saving)return;
+    sy.pending=false;sy.saving=true;// one upsert at a time, so an older copy can't land after a newer one
+    sbSave(stateRef.current).then(()=>{sy.saving=false;sy.failShown=false;if(sy.pending)flush()}).catch(e=>{sy.saving=false;sy.pending=true;console.error("Falha ao sincronizar com a nuvem",e);
+      if(!sy.failShown){sy.failShown=true;showToast("Sem conexão com a nuvem — salvo neste aparelho")}});
+  },[showToast]);
+  // Read the cloud copy at start and every time the app comes back (another device may have saved meanwhile)
+  const loadCloud=useCallback(()=>{
+    const sy=syncRef.current;if(sy.loading)return;sy.loading=true;
+    sbLoad().then(res=>{sy.loading=false;
+      if(!res.ok){console.error("Falha ao carregar da nuvem (nova tentativa ao voltar a conexão)",res.error);return}
+      const first=!sy.loaded;sy.loaded=true;const r=res.state?.v===7?res.state:null;const cur=stateRef.current;
+      const rt=r?(r._ts||0):-1,lt=cur._seed?-1:(cur._ts||0);
+      if(r&&(rt>lt||first&&rt===lt)){
+        if(cur._seed&&cur._ts)showToast("Dados da nuvem carregados — mudanças feitas antes da conexão foram descartadas");
+        clearTimeout(sbTimerRef.current);sy.pending=false;sy.skipNext=true;const{_seed,...q}=r;setStateRaw(q);
+      }
+      else{if(cur._seed)setStateRaw(p=>{const{_seed,...q}=p;return q});if(rt<lt||!r){sy.pending=true;flushCloud()}}// this device is newer, or the account has no cloud copy yet
+    });
+  },[flushCloud,showToast]);
   useEffect(()=>{
-    if(!state.compensate||!state.endDate)return;
-    const now=new Date();const today=now.getDay();
-    const plannedDays=new Set(WK.map(k=>td[k]?.dayOfWeek).filter(d=>d!=null));
-    // Check yesterday
-    const yesterday=(today+6)%7;// JS getDay: 0=Sun
-    if(!plannedDays.has(yesterday))return;
-    // Check if any workout for yesterday was completed this week
-    const yDate=new Date(now);yDate.setDate(yDate.getDate()-1);
-    const yKey=`rf_comp_${yDate.toISOString().slice(0,10)}`;
-    if(localStorage.getItem(yKey))return;// already checked this day
-    localStorage.setItem(yKey,"1");
-    const yWk=WK.find(k=>td[k]?.dayOfWeek===yesterday);
-    if(!yWk)return;
-    const w=state.w[yWk];if(!w)return;
-    // Check if the most recent session was completed around yesterday
-    const lastDone=w.sessions.filter(s=>s.status==="done"&&s.at);
-    const doneYesterday=lastDone.some(s=>{const d=new Date(s.at);return d.toISOString().slice(0,10)===yDate.toISOString().slice(0,10)||(d.getDay()===yesterday&&Math.abs(d-yDate)<86400000*2)});
-    if(doneYesterday)return;
-    // Missed — extend endDate by 1 day
-    setState(p=>{const n=JSON.parse(JSON.stringify(p));const ed=new Date(n.endDate);ed.setDate(ed.getDate()+1);n.endDate=ed.toISOString();return n});
-  },[state.compensate,WK]);
+    if(!sv(state)&&!syncRef.current.localFailShown){syncRef.current.localFailShown=true;showToast("Falha ao salvar neste aparelho (armazenamento cheio?)")}
+    const sy=syncRef.current;if(!sy.loaded)return;
+    if(sy.skipNext){sy.skipNext=false;return}// state just came from the cloud
+    sy.pending=true;clearTimeout(sbTimerRef.current);sbTimerRef.current=setTimeout(flushCloud,2000);
+  },[state]);
+  useEffect(()=>{
+    if(loadIssue){showToast(loadIssue);loadIssue=null}
+    // leftovers of the old per-device compensation check (the plan end is now derived)
+    try{Object.keys(localStorage).filter(k=>k.startsWith("rf_comp_")).forEach(k=>localStorage.removeItem(k))}catch(e){console.warn(e)}
+    loadCloud();
+    const onVis=()=>{if(document.hidden)flushCloud();else loadCloud()};
+    const onOnline=()=>{loadCloud();flushCloud()};
+    document.addEventListener("visibilitychange",onVis);window.addEventListener("online",onOnline);window.addEventListener("pagehide",flushCloud);
+    return()=>{flushCloud();document.removeEventListener("visibilitychange",onVis);window.removeEventListener("online",onOnline);window.removeEventListener("pagehide",flushCloud)};
+  },[loadCloud,flushCloud]);
+  const logout=async()=>{
+    clearTimeout(sbTimerRef.current);const sy=syncRef.current;
+    if(sy.loaded&&sy.pending){try{await sbSave(stateRef.current);sy.pending=false}catch(e){console.error(e);if(!confirm("Há alterações ainda não enviadas à nuvem (ficam salvas neste aparelho). Sair mesmo assim?"))return}}
+    const{error}=await supabase.auth.signOut();if(error)alert("Erro ao sair: "+error.message);
+  };
   useEffect(()=>{document.body.style.background=t.bg;document.body.style.color=t.text;document.getElementById("tc").content=t.bg},[dark]);
 
   const td=state.td;
   // ensure wkOrder is always valid
-  const WK=useMemo(()=>{
-    const order=state.wkOrder||[];
-    const keys=Object.keys(td);
-    // add any keys not in order
-    const missing=keys.filter(k=>!order.includes(k));
-    const valid=order.filter(k=>keys.includes(k));
-    return[...valid,...missing];
-  },[state.wkOrder,td]);
+  const WK=useMemo(()=>normOrder(state),[state.wkOrder,td]);
+
+  // a view whose workout/session disappeared (deleted, replaced by the cloud copy) falls back instead of a blank screen
+  useEffect(()=>{
+    if((view==="workout"||view==="editWorkout")&&(!active||!state.w[active]||!state.td[active])){setActive(null);setView("home")}
+    else if(view==="detail"&&(!hd||!state.w[hd.k]?.sessions[hd.i]))setView("history");
+  },[view,active,hd,state]);
   const TOTAL=state.total||16;
   const phases=state.phases||[];const numPhases=phases.length;
   // Build cumulative session boundaries from phase weeks
@@ -1176,7 +1278,7 @@ function App({session}){
       const factor=1+(pct/100);
       s.exercises.forEach((e,i)=>{
         const orig=s._origWeights[i];
-        if(orig!=null)e.weight=Math.round(orig*factor*10)/10;
+        if(orig!=null)e.weight=snapWeight(Math.round(orig*factor*10)/10,n.td[wk].exercises[i],Math.sign(pct));
       });
       if(pct<0)s.deload=true;else delete s.deload;
       return n;
@@ -1198,19 +1300,19 @@ function App({session}){
       saveBackup(p);
       const n=JSON.parse(JSON.stringify(p));const w=n.w[wk];const s=w.sessions[w.cur];
       s.status=status;s.at=new Date().toISOString();if(sessionNote.trim())s.note=sessionNote.trim();
-      if(status==="done"&&w.cur<TOTAL-1){const nx=w.sessions[w.cur+1];s.exercises.forEach((e,i)=>{if(nx.exercises[i]){if(e.weight!=null)nx.exercises[i].weight=e.weight;if(e.tag)nx.exercises[i].tag=e.tag;if(e.dropWeights)nx.exercises[i].dropWeights=[...e.dropWeights];if(e.sets.length!==nx.exercises[i].sets.length)nx.exercises[i].sets=Array(e.sets.length).fill(false)}})}
+      if(w.cur<TOTAL-1){const nx=w.sessions[w.cur+1];s.exercises.forEach((e,i)=>{if(nx.exercises[i]){const base=s.deload&&s._origWeights?.[i]!=null?s._origWeights[i]:e.weight;if(base!=null)nx.exercises[i].weight=base;if(e.tag){nx.exercises[i].tag=e.tag;if(e.ssGroup)nx.exercises[i].ssGroup=e.ssGroup;else delete nx.exercises[i].ssGroup}if(e.dropWeights)nx.exercises[i].dropWeights=[...e.dropWeights];if(e.sets.length!==nx.exercises[i].sets.length)nx.exercises[i].sets=Array(e.sets.length).fill(false)}})}
       w.cur=Math.min(w.cur+1,TOTAL-1);return n;
     });setActive(null);setView("home");setSessionNote("");
     setToast(status==="done"?"Sessão concluída ✓":"Sessão pulada");setTimeout(()=>setToast(null),2000);
   },[TOTAL,sessionNote,setActive,setView]);
 
   const saveExEdit=(wk,idx,data)=>{setState(p=>{const n=JSON.parse(JSON.stringify(p));if(idx===undefined){n.td[wk].exercises.push(data);n.w[wk].sessions.forEach(s=>{if(!s.status)s.exercises.push({weight:data.initWeight,sets:Array(data.sets).fill(false)})})}else{const old=n.td[wk].exercises[idx];n.td[wk].exercises[idx]=data;if(data.sets!==old.sets)n.w[wk].sessions.forEach(s=>{if(!s.status&&s.exercises[idx]){const prev=s.exercises[idx].sets;s.exercises[idx].sets=Array(data.sets).fill(false).map((_,i)=>prev[i]||false)}})}return n})};
-  const deleteEx=(wk,idx)=>{setState(p=>{const n=JSON.parse(JSON.stringify(p));n.td[wk].exercises.splice(idx,1);n.w[wk].sessions.forEach(s=>{if(s.exercises[idx]!=null)s.exercises.splice(idx,1)});return n})};
-  const createWorkout=(name,dow)=>{setState(p=>{const n=JSON.parse(JSON.stringify(p));n.td[name]={dayLabel:DAYS[dow],dayOfWeek:dow,exercises:[]};n.w[name]={cur:0,sessions:Array.from({length:TOTAL},()=>({status:null,exercises:[]}))};const order=[...(n.wkOrder||Object.keys(n.td)),name];order.sort((a,b)=>(n.td[a]?.dayOfWeek||0)-(n.td[b]?.dayOfWeek||0));n.wkOrder=order;return n})};
+  const deleteEx=(wk,idx)=>{setState(p=>{const n=JSON.parse(JSON.stringify(p));n.td[wk].exercises.splice(idx,1);n.w[wk].sessions.forEach(s=>{if(s.exercises[idx]!=null)s.exercises.splice(idx,1);if(s._origWeights)s._origWeights.splice(idx,1)});return n})};
+  const createWorkout=(name,dow)=>{if(state.td[name]){alert("Já existe um treino com esse nome");return}setState(p=>{if(p.td[name])return p;const n=JSON.parse(JSON.stringify(p));n.td[name]={dayLabel:DAYS[dow],dayOfWeek:dow,exercises:[]};n.w[name]={cur:0,sessions:Array.from({length:TOTAL},()=>({status:null,exercises:[]}))};addToOrder(n,name);return n})};
   const deleteWorkout=(wk)=>{setState(p=>{const n=JSON.parse(JSON.stringify(p));delete n.td[wk];delete n.w[wk];n.wkOrder=(n.wkOrder||[]).filter(k=>k!==wk);return n})};
-  const duplicateWorkout=(wk)=>{const nn=wk+" (cópia)";if(state.td[nn])return;setState(p=>{const n=JSON.parse(JSON.stringify(p));n.td[nn]={...n.td[wk],exercises:n.td[wk].exercises.map(e=>({...e}))};n.w[nn]={cur:0,sessions:Array.from({length:TOTAL},()=>({status:null,exercises:n.td[nn].exercises.map(e=>({weight:e.initWeight,sets:Array(e.sets).fill(false)}))}))};n.wkOrder=[...(n.wkOrder||Object.keys(n.td)),nn];return n})};
-  const renameWorkout=(oldName,newName)=>{if(!newName||newName===oldName||state.td[newName])return;setState(p=>{const n=JSON.parse(JSON.stringify(p));n.td[newName]=n.td[oldName];delete n.td[oldName];n.w[newName]=n.w[oldName];delete n.w[oldName];n.wkOrder=(n.wkOrder||[]).map(k=>k===oldName?newName:k);return n});setActive(newName)};
-  const moveWorkout=(wk,dir)=>{setState(p=>{const n=JSON.parse(JSON.stringify(p));const o=n.wkOrder?[...n.wkOrder]:Object.keys(n.td);const i=o.indexOf(wk);if(i<0)return p;const j=i+dir;if(j<0||j>=o.length)return p;
+  const duplicateWorkout=(wk)=>{let nn=wk+" (cópia)";for(let c=2;state.td[nn];c++)nn=`${wk} (cópia ${c})`;setState(p=>{const n=JSON.parse(JSON.stringify(p));n.td[nn]={...n.td[wk],exercises:n.td[wk].exercises.map(e=>({...e}))};n.w[nn]={cur:0,sessions:Array.from({length:TOTAL},()=>({status:null,exercises:n.td[nn].exercises.map(e=>({weight:e.initWeight,sets:Array(e.sets).fill(false)}))}))};addToOrder(n,nn,false);return n});return nn};
+  const renameWorkout=(oldName,newName)=>{if(!newName||newName===oldName)return;if(state.td[newName]){alert("Já existe um treino com esse nome");setEditName(oldName);return}setState(p=>{const n=JSON.parse(JSON.stringify(p));n.td[newName]=n.td[oldName];delete n.td[oldName];n.w[newName]=n.w[oldName];delete n.w[oldName];n.wkOrder=(n.wkOrder||[]).map(k=>k===oldName?newName:k);return n});setActive(newName)};
+  const moveWorkout=(wk,dir)=>{setState(p=>{const n=JSON.parse(JSON.stringify(p));const o=normOrder(n);const i=o.indexOf(wk);if(i<0)return p;const j=i+dir;if(j<0||j>=o.length)return p;
     // swap day info
     const a=n.td[o[i]],b=n.td[o[j]];
     const tmpD=a.dayOfWeek,tmpL=a.dayLabel;
@@ -1218,9 +1320,10 @@ function App({session}){
     b.dayOfWeek=tmpD;b.dayLabel=tmpL;
     const tmp=o[i];o[i]=o[j];o[j]=tmp;n.wkOrder=o;return n})};
 
-  const moveEx=(wk,idx,dir)=>{setState(p=>{const n=JSON.parse(JSON.stringify(p));const exs=n.td[wk].exercises;const j=idx+dir;if(j<0||j>=exs.length)return p;const tmp=exs[idx];exs[idx]=exs[j];exs[j]=tmp;n.w[wk].sessions.forEach(s=>{if(s.exercises.length>Math.max(idx,j)){const t2=s.exercises[idx];s.exercises[idx]=s.exercises[j];s.exercises[j]=t2}});return n})};
+  const moveEx=(wk,idx,dir)=>{setState(p=>{const n=JSON.parse(JSON.stringify(p));const exs=n.td[wk].exercises;const j=idx+dir;if(j<0||j>=exs.length)return p;const tmp=exs[idx];exs[idx]=exs[j];exs[j]=tmp;n.w[wk].sessions.forEach(s=>{while(s.exercises.length<exs.length)s.exercises.push({weight:null,sets:[],skipped:true});if(s.exercises.length>Math.max(idx,j)){const t2=s.exercises[idx];s.exercises[idx]=s.exercises[j];s.exercises[j]=t2}if(s._origWeights?.length>Math.max(idx,j)){const o=s._origWeights[idx];s._origWeights[idx]=s._origWeights[j];s._origWeights[j]=o}});return n})};
 
-  const daysLeft=()=>{if(!state.endDate)return null;const d=Math.ceil((new Date(state.endDate)-new Date())/86400000);return d};
+  const pe=planEnd(state,WK);
+  const daysLeft=()=>{if(!pe)return null;const today=new Date();today.setHours(0,0,0,0);return Math.round((pe.end-today)/86400000)};
 
   const nextWk=useMemo(()=>{
     const today=new Date().getDay();
@@ -1232,22 +1335,56 @@ function App({session}){
     return available[0];
   },[state,WK,TOTAL]);
 
+  // Phone back button: while a screen or panel is open over home, keep one history entry so "back" closes it
+  // (innermost first) instead of leaving the app
+  const goBack=()=>{
+    if(timer){setTimer(null);setTimerOrigin(null);return}
+    if(editEx){setEditEx(null);return}
+    if(showLoadModal){setShowLoadModal(null);return}
+    if(showChart){setShowChart(null);return}
+    if(showEquip){setShowEquip(false);return}
+    if(showPlan){setShowPlan(false);return}
+    if(showNewWk){setShowNewWk(false);return}
+    if(showPaste){setShowPaste(false);return}
+    if(showSummary){setShowSummary(false);return}
+    if(showBackups){setShowBackups(false);return}
+    if(view==="detail"){setView("history");return}
+    if(view==="editWorkout"){const nn=editName.trim();if(active&&nn&&nn!==active)renameWorkout(active,nn)}
+    setFocusEx(null);setActive(null);setView("home");
+  };
+  const layer=view!=="home"||!!(timer||editEx||showLoadModal||showChart||showEquip||showPlan||showNewWk||showPaste||showSummary||showBackups);
+  const navRef=useRef({goBack,layer,ignorePop:false});navRef.current.goBack=goBack;navRef.current.layer=layer;
+  const[navTick,setNavTick]=useState(0);
+  useEffect(()=>{
+    const h=()=>{const nv=navRef.current;if(nv.ignorePop){nv.ignorePop=false;return}if(!nv.layer)return;nv.goBack();setNavTick(n=>n+1)};
+    window.addEventListener("popstate",h);return()=>window.removeEventListener("popstate",h);
+  },[]);
+  useEffect(()=>{
+    const first=!navRef.current.mounted;navRef.current.mounted=true;
+    if(layer&&!history.state?.rf)history.pushState({rf:1},"");
+    else if(!layer&&history.state?.rf){
+      if(first)history.replaceState(null,"");// reloaded while a panel was open: just clear the marker
+      else{navRef.current.ignorePop=true;history.back()}// closed in-app: drop our entry
+    }
+  },[layer,navTick]);
+
   if(view==="home"){
     const totalDone=WK.reduce((s,k)=>s+(state.w[k]?.sessions.filter(x=>x.status==="done").length||0),0);
     const total=WK.length*TOTAL;const pct=total?Math.round(totalDone/total*100):0;const dl=daysLeft();
     return(
       <TC.Provider value={t}>
       <div style={{minHeight:"100dvh",maxWidth:480,margin:"0 auto",background:t.bg}}>
+        {updateReady&&<button onClick={()=>location.reload()} style={{position:"fixed",bottom:"max(16px, env(safe-area-inset-bottom))",left:"50%",transform:"translateX(-50%)",background:t.accent,color:"#fff",border:"none",padding:"12px 20px",borderRadius:100,fontSize:14,fontWeight:600,zIndex:200,boxShadow:"0 4px 12px rgba(0,0,0,.25)"}}>Nova versão disponível · Atualizar</button>}
         {toast&&<div style={{position:"fixed",top:40,left:"50%",transform:"translateX(-50%)",background:t.green,color:"#fff",padding:"10px 24px",borderRadius:100,fontSize:14,fontWeight:600,zIndex:200,animation:"fadeIn .2s ease-out",boxShadow:"0 4px 12px rgba(0,0,0,.2)"}}>{toast}</div>}
         {showPlan&&<PlanModal state={state} setState={setState} onClose={()=>setShowPlan(false)}/>}
-        {showNewWk&&<NewWorkoutModal onSave={createWorkout} onClose={()=>setShowNewWk(false)}/>}
+        {showNewWk&&<NewWorkoutModal existing={WK} onSave={createWorkout} onClose={()=>setShowNewWk(false)}/>}
         {showPaste&&<PasteImportModal existingWorkouts={WK} onImport={parseText} onClose={()=>setShowPaste(false)}/>}
         {showChart&&<ProgressChart wk={showChart} state={state} onClose={()=>setShowChart(null)}/>}
         {showSummary&&<WeeklySummary state={state} onClose={()=>setShowSummary(false)}/>}
         {showBackups&&<Modal onClose={()=>setShowBackups(false)}>
           <h2 style={{fontSize:18,fontWeight:700,color:t.text,marginBottom:16,display:"flex",alignItems:"center",gap:8}}><I d={IC.history} s={20} c={t.accent}/>Restaurar backup</h2>
           {(()=>{const bk=getBackups();return bk.length===0?<p style={{fontSize:13,color:t.textTer,textAlign:"center",padding:"20px 0"}}>Nenhum backup disponível</p>
-            :bk.map((b,i)=>{const d=new Date(b.at);const done=Object.values(b.data.w||{}).reduce((s,w)=>s+(w?.sessions?.filter(x=>x.status==="done").length||0),0);return<button key={i} onClick={()=>{if(confirm(`Restaurar backup de ${d.toLocaleString("pt-BR")}? O estado atual será substituído.`)){saveBackup(state);const r=restoreBackup(i);if(r){setState(migrateRests(r));setShowBackups(false);setToast("Backup restaurado");setTimeout(()=>setToast(null),2000)}else alert("Erro ao restaurar")}}} style={{width:"100%",padding:14,borderRadius:14,background:t.card,border:`1px solid ${t.border}`,marginBottom:8,textAlign:"left",display:"flex",flexDirection:"column",gap:4}}>
+            :bk.map((b,i)=>{const d=new Date(b.at);const done=Object.values(b.data.w||{}).reduce((s,w)=>s+(w?.sessions?.filter(x=>x.status==="done").length||0),0);return<button key={i} onClick={()=>{if(confirm(`Restaurar backup de ${d.toLocaleString("pt-BR")}? O estado atual será substituído.`)){const r=restoreBackup(i);if(r){saveBackup(state);setState(migrateSmartFit(migrateRests(r)));setShowBackups(false);setToast("Backup restaurado");setTimeout(()=>setToast(null),2000)}else alert("Erro ao restaurar")}}} style={{width:"100%",padding:14,borderRadius:14,background:t.card,border:`1px solid ${t.border}`,marginBottom:8,textAlign:"left",display:"flex",flexDirection:"column",gap:4}}>
               <span style={{fontSize:14,fontWeight:600,color:t.text}}>{d.toLocaleDateString("pt-BR")} {d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span>
               <span style={{fontSize:11,color:t.textSec}}>{done} sessões concluídas</span>
             </button>})})()}
@@ -1259,11 +1396,11 @@ function App({session}){
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <h1 style={{fontSize:28,fontWeight:800,letterSpacing:-.5,color:t.text}}><span style={{color:t.accent}}>Rep</span><span>Forge</span></h1>
             <div style={{display:"flex",gap:6}}>
-              <button onClick={()=>setState(p=>({...p,dark:!p.dark}))} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={dark?IC.sun:IC.moon} s={18} c={t.textSec}/></button>
-              <button onClick={()=>supabase.auth.signOut()} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}} title="Sair"><I d={IC.logout} s={18} c={t.textSec}/></button>
-              <button onClick={()=>setShowSummary(true)} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.layers} s={18} c={t.textSec}/></button>
-              <button onClick={()=>setShowPlan(true)} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.calendar} s={18} c={t.textSec}/></button>
-              <button onClick={()=>setView("history")} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.history} s={18} c={t.textSec}/></button>
+              <button aria-label="Alternar tema" onClick={()=>setState(p=>({...p,dark:!p.dark}))} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={dark?IC.sun:IC.moon} s={18} c={t.textSec}/></button>
+              <button aria-label="Sair" onClick={logout} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}} title="Sair"><I d={IC.logout} s={18} c={t.textSec}/></button>
+              <button aria-label="Resumo semanal" onClick={()=>setShowSummary(true)} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.layers} s={18} c={t.textSec}/></button>
+              <button aria-label="Configurar plano" onClick={()=>setShowPlan(true)} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.calendar} s={18} c={t.textSec}/></button>
+              <button aria-label="Histórico" onClick={()=>setView("history")} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.history} s={18} c={t.textSec}/></button>
             </div>
           </div>
         </div>
@@ -1281,8 +1418,9 @@ function App({session}){
               {phases.map((p,i)=>{const isA=WK.some(k=>state.w[k]&&ph(state.w[k].cur)===i);return<span key={i} style={{fontSize:10,fontWeight:isA?700:500,color:isA?t.text:t.textSec,letterSpacing:.5,display:"flex",alignItems:"center",gap:4}}><span style={{width:6,height:6,borderRadius:"50%",background:p.color,opacity:isA?1:.5,flexShrink:0}}/>{p.name}</span>})}
             </div>}
             {dl!==null&&<div style={{marginTop:14,paddingTop:14,borderTop:`1px solid ${t.cardAlt}`,display:"flex",justifyContent:"space-between",fontSize:12,color:t.textSec}}>
-              <span>{state.startDate&&new Date(state.startDate).toLocaleDateString("pt-BR")} → {state.endDate&&new Date(state.endDate).toLocaleDateString("pt-BR")}</span>
-              <span style={{fontWeight:600,color:dl<0?t.red:dl<14?t.yellow:t.textSec}}>{dl<0?"Expirado":`${dl}d`}</span>
+              <span>{new Date(state.startDate).toLocaleDateString("pt-BR")} → {pe.end.toLocaleDateString("pt-BR")}{pe.extra>0&&<span style={{color:t.textTer}}> (+{pe.extra}d por faltas)</span>}</span>
+              {(()=>{const allDone=WK.length>0&&WK.every(k=>{const w=state.w[k];return!w||w.sessions.slice(0,TOTAL).every(x=>x.status)});
+                return<span style={{fontWeight:600,color:allDone?t.green:dl<0?t.red:dl<14?t.yellow:t.textSec}}>{allDone?"Concluído":dl<0?"Expirado":`${dl}d`}</span>})()}
             </div>}
           </div>
         </div>
@@ -1290,8 +1428,8 @@ function App({session}){
         <div style={{padding:"0 20px 100px"}}>
           <h2 style={{fontSize:12,color:t.textSec,marginBottom:14,fontWeight:600,letterSpacing:1.5}}>PRÓXIMAS SESSÕES</h2>
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            {[...WK].sort((a,b)=>{const aDone=state.w[a]&&(state.w[a].cur>=TOTAL||(state.w[a].cur===TOTAL-1&&state.w[a].sessions[state.w[a].cur]?.status));const bDone=state.w[b]&&(state.w[b].cur>=TOTAL||(state.w[b].cur===TOTAL-1&&state.w[b].sessions[state.w[b].cur]?.status));return(aDone?1:0)-(bDone?1:0)}).map((k,wi)=>{
-              const w=state.w[k];if(!w)return null;
+            {[...WK].sort((a,b)=>{const aDone=state.w[a]&&(state.w[a].cur>=TOTAL||(state.w[a].cur===TOTAL-1&&state.w[a].sessions[state.w[a].cur]?.status));const bDone=state.w[b]&&(state.w[b].cur>=TOTAL||(state.w[b].cur===TOTAL-1&&state.w[b].sessions[state.w[b].cur]?.status));return(aDone?1:0)-(bDone?1:0)}).map(k=>{
+              const w=state.w[k];if(!w)return null;const wi=WK.indexOf(k);
               const s=w.cur;const p=ph(s);const d=td[k];if(!d)return null;
               const isDone=s>=TOTAL||(s===TOTAL-1&&w.sessions[s]?.status);
               const isNext=k===nextWk&&!isDone;
@@ -1300,10 +1438,10 @@ function App({session}){
                 <div key={k} className="fi" style={{background:isNext?t.accentBg:t.card,borderRadius:20,padding:16,border:isNext?`2px solid ${t.accent}`:`1px solid ${isDone?t.greenBorder:t.border}`,opacity:isDone?.4:1}}>
                   <div style={{display:"flex",alignItems:"center",gap:10}}>
                     {!isDone&&WK.length>1&&<div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0}}>
-                      <button onClick={e=>{e.stopPropagation();moveWorkout(k,-1)}} disabled={wi===0} style={{background:"transparent",border:"none",padding:2,opacity:wi===0?.15:.5}}><I d={IC.up} s={12} c={t.textTer}/></button>
-                      <button onClick={e=>{e.stopPropagation();moveWorkout(k,1)}} disabled={wi===WK.length-1} style={{background:"transparent",border:"none",padding:2,opacity:wi===WK.length-1?.15:.5}}><I d={IC.down} s={12} c={t.textTer}/></button>
+                      <button aria-label="Mover para cima" onClick={e=>{e.stopPropagation();moveWorkout(k,-1)}} disabled={wi===0} style={{background:"transparent",border:"none",padding:2,opacity:wi===0?.15:.5}}><I d={IC.up} s={12} c={t.textTer}/></button>
+                      <button aria-label="Mover para baixo" onClick={e=>{e.stopPropagation();moveWorkout(k,1)}} disabled={wi===WK.length-1} style={{background:"transparent",border:"none",padding:2,opacity:wi===WK.length-1?.15:.5}}><I d={IC.down} s={12} c={t.textTer}/></button>
                     </div>}
-                    <div onClick={()=>{if(!isDone){setActive(k);setView("workout")}}} style={{flex:1,cursor:isDone?"default":"pointer"}}>
+                    <div onClick={()=>{if(!isDone){setSessionNote("");setActive(k);setView("workout")}}} style={{flex:1,cursor:isDone?"default":"pointer"}}>
                       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
                         {numPhases>0&&<span style={{background:(phaseColor||t.accent)+"18",color:phaseColor,fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:100}}>{phases[p]?.name}</span>}
                         <span style={{fontSize:10,color:t.textSec,fontWeight:500}}>Sessão {s+1} de {TOTAL}</span>
@@ -1311,7 +1449,7 @@ function App({session}){
                       <div style={{fontSize:15,fontWeight:600,color:t.text}}>{k}</div>
                       <div style={{fontSize:11,color:t.textSec,marginTop:2}}>{d.dayLabel} · {d.exercises.length} exercício{d.exercises.length!==1?"s":""}</div>
                     </div>
-                    {!isDone&&<div onClick={()=>{setActive(k);setView("workout")}} style={{width:44,height:44,borderRadius:14,background:isNext?`linear-gradient(135deg,${t.accent},${t.accentDark})`:t.cardAlt,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                    {!isDone&&<div onClick={()=>{setSessionNote("");setActive(k);setView("workout")}} style={{width:44,height:44,borderRadius:14,background:isNext?`linear-gradient(135deg,${t.accent},${t.accentDark})`:t.cardAlt,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
                       <I d={IC.play} s={18} c={isNext?"#fff":t.textSec}/>
                     </div>}
                   </div>
@@ -1329,7 +1467,7 @@ function App({session}){
             <button onClick={exportCSV} style={{flex:1,padding:12,borderRadius:14,background:t.card,border:`1px solid ${t.border}`,color:t.textSec,fontSize:12,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}><I d={IC.download} s={14} c={t.textSec}/>Exportar</button>
             <button onClick={()=>setShowPaste(true)} style={{flex:1,padding:12,borderRadius:14,background:t.card,border:`1px solid ${t.border}`,color:t.textSec,fontSize:12,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}><I d={IC.upload} s={14} c={t.textSec}/>Importar</button>
           </div>
-          <button onClick={()=>{const done=WK.reduce((s,k)=>s+(state.w[k]?.sessions.filter(x=>x.status==="done").length||0),0);if(!confirm(`Resetar todo o progresso? (${done} sessões serão perdidas)`))return;if(done>0&&!confirm("Tem certeza? Esta ação é irreversível."))return;saveBackup(state);localStorage.removeItem(SK);setState(init())}} style={{marginTop:10,width:"100%",padding:12,borderRadius:14,background:t.card,border:`1px solid ${t.border}`,color:t.textTer,fontSize:13,fontWeight:500}}>Resetar progresso</button>
+          <button onClick={()=>{const done=WK.reduce((s,k)=>s+(state.w[k]?.sessions.filter(x=>x.status==="done").length||0),0);if(!confirm(`Resetar todo o progresso? (${done} sessões serão perdidas)`))return;if(done>0&&!confirm("Tem certeza? Esta ação é irreversível."))return;saveBackup(state);localStorage.removeItem(scopedKey(SK));setState(()=>{const{_seed,...q}=init();return q})}} style={{marginTop:10,width:"100%",padding:12,borderRadius:14,background:t.card,border:`1px solid ${t.border}`,color:t.textTer,fontSize:13,fontWeight:500}}>Resetar progresso</button>
           {getBackups().length>0&&<button onClick={()=>setShowBackups(true)} style={{marginTop:6,width:"100%",padding:12,borderRadius:14,background:t.card,border:`1px solid ${t.border}`,color:t.accent,fontSize:13,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}><I d={IC.history} s={14} c={t.accent}/>Restaurar backup</button>}
         </div>
       </div>
@@ -1379,10 +1517,10 @@ function App({session}){
           </div>
         </BottomSheet>}
         <div style={{padding:"24px 20px 16px",display:"flex",alignItems:"center",gap:14}}>
-          <button onClick={()=>{applyRename();setActive(null);setView("home")}} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.back} s={18} c={t.text}/></button>
+          <button aria-label="Voltar" onClick={()=>{applyRename();setActive(null);setView("home")}} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.back} s={18} c={t.text}/></button>
           <div style={{flex:1}}><h1 style={{fontSize:18,fontWeight:700,color:t.text}}>Editar treino</h1></div>
-          <button onClick={()=>{duplicateWorkout(k);setActive(null);setView("home");setToast("Treino duplicado");setTimeout(()=>setToast(null),2000)}} style={{background:t.accentBg,border:"none",borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",marginRight:6}}><I d={IC.copy} s={16} c={t.accent}/></button>
-          <button onClick={()=>{if(confirm(`Excluir treino "${k}"?`)){deleteWorkout(k);setActive(null);setView("home")}}} style={{background:t.redBg,border:"none",borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.trash} s={16} c={t.red}/></button>
+          <button onClick={()=>{const nn=duplicateWorkout(k);setActive(null);setView("home");showToast(`Criado "${nn}"`)}} aria-label="Duplicar treino" style={{background:t.accentBg,border:"none",borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",marginRight:6}}><I d={IC.copy} s={16} c={t.accent}/></button>
+          <button onClick={()=>{if(confirm(`Excluir treino "${k}"?`)){deleteWorkout(k);setActive(null);setView("home")}}} aria-label="Excluir treino" style={{background:t.redBg,border:"none",borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.trash} s={16} c={t.red}/></button>
         </div>
         <div style={{padding:"0 20px 8px",display:"flex",flexDirection:"column",gap:10}}>
           <div>
@@ -1425,7 +1563,7 @@ function App({session}){
       <TC.Provider value={t}>
       <div style={{minHeight:"100dvh",maxWidth:480,margin:"0 auto",background:t.bg}}>
         <div style={{padding:"24px 20px 16px",display:"flex",alignItems:"center",gap:14}}>
-          <button onClick={()=>setView("home")} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.back} s={18} c={t.text}/></button>
+          <button aria-label="Voltar" onClick={()=>setView("home")} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.back} s={18} c={t.text}/></button>
           <h1 style={{fontSize:20,fontWeight:700,color:t.text}}>Histórico</h1>
         </div>
         <div style={{padding:"0 20px 40px"}}>
@@ -1458,7 +1596,7 @@ function App({session}){
       <TC.Provider value={t}>
       <div style={{minHeight:"100dvh",maxWidth:480,margin:"0 auto",background:t.bg}}>
         <div style={{padding:"24px 20px 16px",display:"flex",alignItems:"center",gap:14}}>
-          <button onClick={()=>setView("history")} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.back} s={18} c={t.text}/></button>
+          <button aria-label="Voltar" onClick={()=>setView("history")} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.back} s={18} c={t.text}/></button>
           <div><h1 style={{fontSize:18,fontWeight:700,color:t.text}}>Sessão {i+1}</h1><p style={{fontSize:12,color:t.textSec,margin:0}}>{k} · {s.at?new Date(s.at).toLocaleDateString("pt-BR"):""}</p></div>
         </div>
         {s.note&&<div style={{padding:"0 20px 12px"}}><div style={{background:t.yellowBg,border:`1px solid ${t.yellow}33`,borderRadius:12,padding:"10px 14px",fontSize:12,color:t.text}}>{s.note}</div></div>}
@@ -1487,7 +1625,9 @@ function App({session}){
         {toast&&<div style={{position:"fixed",top:40,left:"50%",transform:"translateX(-50%)",background:t.green,color:"#fff",padding:"10px 24px",borderRadius:100,fontSize:14,fontWeight:600,zIndex:200,animation:"fadeIn .2s ease-out",boxShadow:"0 4px 12px rgba(0,0,0,.2)"}}>{toast}</div>}
         {showChart&&<ProgressChart wk={showChart} state={state} onClose={()=>setShowChart(null)}/>}
         {showLoadModal&&<LoadSlider isDeload={showLoadModal==="deload"} onApply={(pct)=>applyLoadAdjust(k,pct)} onClose={()=>setShowLoadModal(null)}/>}
-        {timer&&<RestTimer seconds={timer} onClose={()=>{setTimer(null);
+        {timer&&<RestTimer key={timer.id} seconds={timer.sec} onClose={()=>{
+          // only the timer on screen may close it (a stale one finishing later must not kill the new rest)
+          if(timerRef.current?.id!==timer.id)return;timerRef.current=null;setTimer(null);
           // Focus back on the exercise that started the timer if it still has pending sets
           const originData=timerOrigin!=null?s.exercises[timerOrigin]:null;
           if(originData&&!originData.skipped&&originData.sets.some(x=>!x)){
@@ -1508,7 +1648,7 @@ function App({session}){
         <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
           <div style={{padding:"24px 20px 16px"}}>
             <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:18}}>
-              <button onClick={()=>{setTimer(null);setTimerOrigin(null);setFocusEx(null);setView("home")}} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.back} s={18} c={t.text}/></button>
+              <button aria-label="Voltar" onClick={()=>{setTimer(null);setTimerOrigin(null);setFocusEx(null);setView("home")}} style={{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}><I d={IC.back} s={18} c={t.text}/></button>
               <div style={{flex:1}}>
                 {numPhases>0&&<span style={{background:(phaseColor||t.accent)+"18",color:phaseColor,fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:100}}>{phases[p]?.name}</span>}
                 <h1 style={{fontSize:17,fontWeight:700,marginTop:4,color:t.text}}>{k}</h1>
@@ -1535,44 +1675,24 @@ function App({session}){
           </div>
           <div style={{padding:"0 20px 20px",display:"flex",flexDirection:"column",gap:8}}>
             {(()=>{
-              // Reorder: move all superset exercises to be consecutive
-              const ordered=[];const ssItems=[];const nonSS=[];
+              // Super sets: exercises tagged with the same group letter are shown together, at the first member's position
+              const ordered=[];const groups={};
               exs.forEach((ex,i)=>{
                 const d=s.exercises[i]||{weight:null,sets:[]};
-                if(d.tag==="superset")ssItems.push({ex,data:d,idx:i});
-                else nonSS.push({ex,data:d,idx:i});
+                if(d.tag==="superset"){const gk=d.ssGroup||SS_GROUPS[0];if(!groups[gk]){groups[gk]={type:"superset",group:gk,items:[]};ordered.push(groups[gk])}groups[gk].items.push({ex,data:d,idx:i})}
+                else ordered.push({type:"single",ex,data:d,idx:i});
               });
-              // Insert superset group at position of first superset exercise
-              let ssInserted=false;
-              exs.forEach((ex,i)=>{
-                const d=s.exercises[i]||{weight:null,sets:[]};
-                if(d.tag==="superset"){
-                  if(!ssInserted){ordered.push({type:"superset",items:ssItems});ssInserted=true}
-                } else {
-                  ordered.push({type:"single",ex,data:d,idx:i});
-                }
-              });
-              if(ssItems.length>0&&!ssInserted)ordered.push({type:"superset",items:ssItems});
-
-              return ordered.map((g,gi)=>{
-                if(g.type==="single"){
-                  return<ExCard key={g.idx} ex={g.ex} data={g.data} onUpdate={d2=>upEx(k,si,g.idx,d2)} onRest={sec=>{setFocusEx(null);setTimerOrigin(g.idx);setTimer(sec)}} prog={getProgression(k,g.idx,state)} idx={g.idx} totalEx={exs.length} autoOpen={focusIdx===g.idx}/>;
-                }
-                if(g.items.length<2){
-                  const it=g.items[0];
-                  return<ExCard key={it.idx} ex={it.ex} data={it.data} onUpdate={d2=>upEx(k,si,it.idx,d2)} onRest={sec=>{setFocusEx(null);setTimerOrigin(it.idx);setTimer(sec)}} prog={getProgression(k,it.idx,state)} idx={it.idx} totalEx={exs.length} autoOpen={focusIdx===it.idx}/>;
-                }
+              const card=(it,onRest)=><ExCard key={it.idx} ex={it.ex} data={it.data} onUpdate={d2=>upEx(k,si,it.idx,d2)} onRest={onRest||(sec=>startRest(it.idx,sec))} prog={getProgression(k,it.idx,state)} idx={it.idx} totalEx={exs.length} autoOpen={focusIdx===it.idx}/>;
+              return ordered.map(g=>{
+                if(g.type==="single")return card(g);
+                if(g.items.length<2)return card(g.items[0]);
                 const allGroupDone=g.items.every(it=>{const sets=it.data.sets||[];return sets.length>0&&sets.every(Boolean)});
-                return<div key={`sg${gi}`} style={{border:`2px solid ${t.yellow}44`,borderRadius:24,padding:4,background:t.yellowBg+"33"}}>
-                  <div style={{fontSize:10,fontWeight:700,color:t.yellow,padding:"4px 12px",display:"flex",alignItems:"center",gap:4}}>⚡ Super Set · {g.items.length} exercícios {allGroupDone&&<I d={IC.check} s={12} c={t.green}/>}</div>
+                const lastDone=(()=>{const ls=g.items[g.items.length-1].data.sets||[];return ls.length>0&&ls.every(Boolean)})();
+                return<div key={`sg${g.group}`} style={{border:`2px solid ${t.yellow}44`,borderRadius:24,padding:4,background:t.yellowBg+"33"}}>
+                  <div style={{fontSize:10,fontWeight:700,color:t.yellow,padding:"4px 12px",display:"flex",alignItems:"center",gap:4}}>⚡ Super Set {g.group} · {g.items.length} exercícios {allGroupDone&&<I d={IC.check} s={12} c={t.green}/>}</div>
                   <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                    {g.items.map((it,ii)=>{
-                      const isLast=ii===g.items.length-1;
-                      const lastDone=(()=>{const ls=g.items[g.items.length-1].data.sets||[];return ls.length>0&&ls.every(Boolean)})();
-                      return<ExCard key={it.idx} ex={it.ex} data={it.data} onUpdate={d2=>upEx(k,si,it.idx,d2)} onRest={sec=>{
-                        if(isLast||lastDone){setFocusEx(null);setTimerOrigin(it.idx);setTimer(sec)}
-                      }} prog={getProgression(k,it.idx,state)} idx={it.idx} totalEx={exs.length} autoOpen={focusIdx===it.idx}/>;
-                    })}
+                    {/* rest only after the group's last exercise (or once it is finished) */}
+                    {g.items.map((it,ii)=>card(it,sec=>{if(ii===g.items.length-1||lastDone)startRest(it.idx,sec)}))}
                   </div>
                 </div>;
               });
@@ -1655,6 +1775,7 @@ function LoginScreen(){
 function Root(){
   const[session,setSession]=useState(undefined);
   useEffect(()=>{
+    if(!supabase)return;
     // Subscribe FIRST — catches SIGNED_IN emitted during URL token exchange,
     // and INITIAL_SESSION emitted by newer supabase-js clients after init
     let resolved=false;
@@ -1669,13 +1790,14 @@ function Root(){
     });
     return()=>subscription.unsubscribe();
   },[]);
+  if(!supabase)return<div style={{minHeight:"100dvh",display:"flex",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center",fontFamily:"system-ui"}}>Não foi possível carregar o RepForge (sem conexão na primeira abertura?). Recarregue a página.</div>;
   if(session===undefined){
     const dark=window.matchMedia?.("(prefers-color-scheme:dark)").matches||false;
     const t=dark?themes.dark:themes.light;
     return<div style={{minHeight:"100dvh",background:t.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><h1 style={{fontSize:28,fontWeight:800,color:t.text}}><span style={{color:t.accent}}>Rep</span>Forge</h1></div>;
   }
   if(!session)return<LoginScreen/>;
-  return<App session={session}/>;
+  return<App key={session.user.id} session={session}/>;
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<Root/>);

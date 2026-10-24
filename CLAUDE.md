@@ -1,43 +1,22 @@
-# Fluxo de trabalho — melhor resultado, menor consumo de token
+# Fluxo de trabalho
 
-## Papéis
+O Claude da sessão implementa, testa e audita direto — não há divisão Opus/Sonnet nem prompts para copiar.
 
-- **Opus (modelo caro):** diagnostica, gera prompts, audita. **NÃO implementa.**
-- **Sonnet (modelo barato):** implementa a partir dos prompts.
+## Implementação e testes
 
-Raciocínio caro planeja e audita; modelo barato escreve o volume.
-
-**Quem despacha o prompt é o usuário.** O Opus entrega o prompt **em bloco de texto, pronto pra copiar**, e para por aí — nunca aciona subagente/Task pra implementar. Subagente começa do zero a cada chamada e re-lê o projeto inteiro; a sessão Sonnet do usuário fica quente e amortiza esse custo. Depois que o usuário avisar que o Sonnet terminou, o Opus audita pelo `git diff`.
-
-## Construção de prompts
-
-- Referenciar arquivo por **caminho + linha**; nunca colar o conteúdo inteiro no prompt.
-- Quebrar em prompts pequenos: **máx. 3 entregáveis** cada, independentes e executáveis sozinhos.
-- Separar **SQL/migrations** do prompt do Sonnet (rodar à parte).
-- **Validação manual vai FORA do prompt** — nota pro usuário (caminho na UI + resultado esperado). Quem valida é o usuário, não o Sonnet.
-
-## Lotes e turnos
-
-- **Prompts irmãos** (dependem só da fundação, não um do outro): entregar **JUNTOS numa mensagem**. Menos turnos = menos re-envio de contexto.
-- **Um-por-um** só quando um prompt depende do anterior (evita bug em cascata).
-
-## Auditoria
-
-- Auditar pelo **`git diff`** (só o que mudou), não relendo arquivos inteiros.
-- A fundo só **fundações** (schema, estado compartilhado, lógica não-óbvia) ou quando o usuário reportar problema.
-- Trivial/cosmético/UI isolada: **confiar** + validação visual do usuário.
-- Auditar **em lote**: vários prompts irmãos num diff só.
+- Testar rodando antes de entregar: compilar o JSX com o mesmo Babel do app, testar funções puras em node e o fluxo real no navegador (Supabase simulado quando precisar de login).
+- Teste que vale é o que falha na versão antiga e passa na nova.
+- Validação manual (caminho na UI + resultado esperado) vai como nota para o usuário no fim.
 
 ## Commits
 
-- Commitar só **fundações/marcos**, não a cada prompt.
-- Commitar **antes do próximo passo do Sonnet**, pro próximo diff sair limpo.
-- Publicação: o app é servido pelo GitHub Pages a partir do `main` — só vai ao ar **depois do push**.
+- Commitar só **marcos** (conjunto de correções testado), não a cada edição.
+- Publicação: o app é servido pelo GitHub Pages a partir do `main` — só vai ao ar **depois do push**. O app instalado pega a versão nova ao abrir com internet (o service worker busca o `index.html` na rede primeiro; o Pages guarda cache por até 10 min).
 
 ## Comunicação
 
 - Resumos **curtos e não-técnicos**: veredito em 1-2 linhas. Detalhe técnico só se pedirem.
-- Quando tiver o suficiente pra agir, **agir** — não re-derivar fato já estabelecido nem re-mandar prompt ainda não enviado.
+- Quando tiver o suficiente pra agir, **agir** — não re-derivar fato já estabelecido.
 
 ## Memória (entre sessões)
 

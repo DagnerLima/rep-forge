@@ -1299,6 +1299,7 @@ function App({session}){
   const layer=view!=="home"||!!(timer||editEx||showLoadModal||showChart||showEquip||showPlan||showNewWk||showPaste||showMenu||showBackups);
   const navRef=useRef({goBack,layer,ignorePop:false});navRef.current.goBack=goBack;navRef.current.layer=layer;
   const[navTick,setNavTick]=useState(0);
+  useEffect(()=>{window.scrollTo(0,0)},[view,active]);
   useEffect(()=>{
     const h=()=>{const nv=navRef.current;if(nv.ignorePop){nv.ignorePop=false;return}if(!nv.layer)return;nv.goBack();setNavTick(n=>n+1)};
     window.addEventListener("popstate",h);return()=>window.removeEventListener("popstate",h);
@@ -1620,7 +1621,7 @@ function App({session}){
       [IC.chart,"Evolução de carga",()=>setShowChart(k)],...(s._origWeights?[[IC.sync,"Restaurar pesos originais",()=>resetWeights(k)]]:[])];
     return(
       <TC.Provider value={t}>
-      <div style={{display:"flex",flexDirection:"column",height:"100dvh",maxWidth:480,margin:"0 auto",background:t.bg,overflow:"hidden"}}>
+      <div style={{minHeight:"100dvh",maxWidth:480,margin:"0 auto",background:t.bg,paddingBottom:"calc(96px + env(safe-area-inset-bottom))"}}>
         {toastEl}
         {showChart&&<ProgressChart wk={showChart} state={state} onClose={()=>setShowChart(null)}/>}
         {showLoadModal&&<LoadSlider isDeload={showLoadModal==="deload"} onApply={(pct)=>applyLoadAdjust(k,pct)} onClose={()=>setShowLoadModal(null)}/>}
@@ -1642,7 +1643,7 @@ function App({session}){
             if(nextInc>=0)setFocusEx(nextInc)}
           setTimerOrigin(null);
         }}/>}
-        <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
+        <div>
           <div style={{padding:"18px 20px 12px"}}>
             <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
               <button aria-label="Voltar" onClick={()=>{setTimer(null);setTimerOrigin(null);setFocusEx(null);setView("home")}} style={sq}><I d={IC.back} s={18} c={t.text} sw={2.4}/></button>
@@ -1659,6 +1660,12 @@ function App({session}){
             {s._origWeights&&<div style={{display:"flex",alignItems:"center",gap:8,marginTop:10,fontSize:12,color:t.textSec}}><I d={s.deload?IC.down:IC.up} s={14} c={t.accent} sw={2.4}/>{s.deload?"Deload aplicado nesta sessão":"Overload aplicado nesta sessão"}<button onClick={()=>resetWeights(k)} style={{...u.link,marginLeft:"auto"}}>Restaurar</button></div>}
           </div>
           <div style={{padding:"0 20px 20px",display:"flex",flexDirection:"column",gap:10}}>
+            {exs.length===0&&<div style={{background:t.card,borderRadius:22,padding:24,textAlign:"center",boxShadow:t.shadow}}>
+              <div style={{width:48,height:48,borderRadius:16,background:t.accentBg,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px"}}><I d={IC.dumbbell} s={24} c={t.accent}/></div>
+              <b style={{display:"block",fontSize:16,color:t.text}}>Nenhum exercício neste treino</b>
+              <p style={{fontSize:13,color:t.textSec,margin:"4px 0 14px"}}>Adicione exercícios ou importe de um texto.</p>
+              <button onClick={()=>{setEditName(k);setEditDay(td[k]?.dayOfWeek||0);setShowEquip(false);setNewEquip("");setView("editWorkout")}} style={{border:"none",borderRadius:14,padding:"12px 18px",background:t.accent,color:"#fff",fontSize:14,fontWeight:700}}>Adicionar exercícios</button>
+            </div>}
             {(()=>{
               // Super sets: exercises tagged with the same group letter are shown together, at the first member's position
               const ordered=[];const groups={};
@@ -1688,7 +1695,7 @@ function App({session}){
             </div>
           </div>
         </div>
-        <div style={{background:t.bg,padding:"12px 20px",paddingBottom:"max(14px, env(safe-area-inset-bottom))",display:"grid",gridTemplateColumns:"1fr 2fr",gap:10,flexShrink:0,borderTop:`1px solid ${t.border}`}}>
+        <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,zIndex:40,background:t.bg,padding:"12px 20px",paddingBottom:"max(14px, env(safe-area-inset-bottom))",display:"grid",gridTemplateColumns:"1fr 2fr",gap:10,borderTop:`1px solid ${t.border}`}}>
           <button onClick={()=>complete(k,"skipped")} style={{height:54,border:"none",borderRadius:18,background:t.card,color:t.textSec,fontSize:15,fontWeight:700,boxShadow:t.shadow,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}><I d={IC.skip} s={14} c={t.textSec}/>Pular</button>
           <button onClick={()=>{if(ds===0){if(!confirm("Nenhuma série feita. Concluir mesmo assim?"))return}complete(k,"done")}} style={{height:54,border:"none",borderRadius:18,background:"linear-gradient(135deg,#3b82f6,#2563eb)",color:"#fff",fontSize:15,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:"0 8px 20px rgba(37,99,235,.35)"}}><I d={IC.check} s={18} c="#fff" sw={2.6}/>Concluir treino</button>
         </div>

@@ -356,6 +356,18 @@ function playClip(name,draw){
 function playLive(draw){try{const ctx=getAudioCtx();draw(ctx,ctx.destination,ctx.currentTime+0.02)}catch(e){console.warn("Som indisponível",e)}}
 function playAlarm(){playClip("bell",drawBell)}
 function playTick(last){playClip(last?"tickLast":"tick",drawTick(last))}
+// Rest end with the app in the background: a notification (system sound + vibration, works with the screen off)
+// on top of the bell. Android only allows notifications through the service worker registration.
+const REST_TAG="rf-rest";
+function notifyRestEnd(next){
+  try{if(!("Notification" in window)||Notification.permission!=="granted"||!navigator.serviceWorker)return;
+    const body=next?`Próxima: ${next.name} · série ${next.set} de ${next.of}${next.weight!=null?` · ${fmtKg(next.weight)} kg`:""}`:"Hora da próxima série";
+    navigator.serviceWorker.ready.then(r=>r.showNotification("Descanso terminado",{body,tag:REST_TAG,renotify:true,vibrate:[300,150,300,150,400],icon:"icon-192.png",badge:"icon-192.png"})).catch(e=>console.warn("Notificação não mostrada",e));
+  }catch(e){console.warn("Notificação indisponível",e)}
+}
+function clearRestNotice(){navigator.serviceWorker?.ready.then(r=>r.getNotifications({tag:REST_TAG})).then(ns=>(ns||[]).forEach(n=>n.close())).catch(e=>console.warn("Não deu para limpar a notificação",e))}
+// asked once, on the first rest (a tap, so Chrome accepts the request); "denied" is respected and never asked again
+function askNotifyOnce(){try{if("Notification" in window&&Notification.permission==="default")Notification.requestPermission().catch(e=>console.warn("Permissão de notificação não pedida",e))}catch(e){console.warn("Notificação indisponível",e)}}
 document.addEventListener("pointerdown",()=>{try{getAudioCtx()}catch(e){console.warn("Áudio indisponível",e)}},{once:true});
 
 // Wake Lock — keeps screen on during workout
@@ -405,15 +417,18 @@ function RestTimer({seconds,next,onClose}){
   const bgTimeoutRef=useRef(null);
   const lastTickRef=useRef(-1);
   const returnRef=useRef(null);
+  const nextRef=useRef(next);nextRef.current=next;
 
   const fireAlarm=useCallback(()=>{
     if(closedRef.current)return;closedRef.current=true;
     clearInterval(intervalRef.current);clearTimeout(bgTimeoutRef.current);
     try{navigator.vibrate?.([300,150,300,150,400])}catch(e){console.warn("Vibração indisponível",e)}
-    if(!document.hidden){playAlarm();setRem(0);onClose()}
+    playAlarm();
+    if(!document.hidden){setRem(0);onClose()}
     else{
-      setRem(0);
-      const onReturn=()=>{if(!document.hidden){playAlarm();try{navigator.vibrate?.([300,150,300,150,400])}catch(e){console.warn("Vibração indisponível",e)}document.removeEventListener("visibilitychange",onReturn);returnRef.current=null;onClose()}};
+      // in the background: bell + notification now; the sheet closes when the app comes back
+      notifyRestEnd(nextRef.current);setRem(0);
+      const onReturn=()=>{if(!document.hidden){clearRestNotice();document.removeEventListener("visibilitychange",onReturn);returnRef.current=null;onClose()}};
       returnRef.current=onReturn;document.addEventListener("visibilitychange",onReturn);
     }
   },[onClose]);
@@ -1091,7 +1106,7 @@ function App({session}){
   const[active,setActive]=useState(null);const[timer,setTimer]=useState(null);const[timerOrigin,setTimerOrigin]=useState(null);
   // timer = {sec,id}: a fresh id per rest remounts RestTimer even when the same duration is tapped again
   const timerRef=useRef(null);timerRef.current=timer;
-  const startRest=(idx,sec)=>{setFocusEx(null);setTimerOrigin(idx);setTimer({sec,id:Date.now()+Math.random()})};
+  const startRest=(idx,sec)=>{askNotifyOnce();setFocusEx(null);setTimerOrigin(idx);setTimer({sec,id:Date.now()+Math.random()})};
   const[view,setView]=useState("home");const[hd,setHd]=useState(null);
   const[showPlan,setShowPlan]=useState(false);const[showNewWk,setShowNewWk]=useState(false);const[editEx,setEditEx]=useState(null);
   const[focusEx,setFocusEx]=useState(null);

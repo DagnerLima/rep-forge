@@ -4,7 +4,7 @@ const CDN_HOSTS=['cdnjs.cloudflare.com','fonts.googleapis.com','fonts.gstatic.co
 const PRECACHE=[
   './',
   './index.html',
-  './manifest.webmanifest',
+  './manifest.webmanifest?v=2',
   './icon-192.png',
   './icon-512.png',
   './icon-maskable-512.png',

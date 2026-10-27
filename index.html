@@ -361,18 +361,6 @@ function playTick(last){playClip(last?"tickLast":"tick",drawTick(last))}
 const BG_BELL_PARTS=BOWL_PARTS.map(([f,db,dec],i)=>[f,i>=3?db+6:db,dec]);
 const drawBellBg=(ctx,dest,t)=>{const m=ctx.createGain();m.gain.value=0.2;m.connect(dest);[t,t+1.2].forEach(s=>BG_BELL_PARTS.forEach(([f,db,dec])=>partial(ctx,m,s,f,Math.pow(10,db/20),0.035,dec,2.4,0.6)))};
 const BELL_LAG=0.4;// scheduled bell waits a bit so the in-front clip can replace it first (the timer checks every 250 ms)
-// Rest end with the app in the background: a notification (system sound + vibration, works with the screen off)
-// on top of the bell. Android only allows notifications through the service worker registration.
-const REST_TAG="rf-rest";
-function notifyRestEnd(next){
-  try{if(!("Notification" in window)||Notification.permission!=="granted"||!navigator.serviceWorker)return;
-    const body=next?`Próxima: ${next.name} · série ${next.set} de ${next.of}${next.weight!=null?` · ${fmtKg(next.weight)} kg`:""}`:"Hora da próxima série";
-    navigator.serviceWorker.ready.then(r=>r.showNotification("Descanso terminado",{body,tag:REST_TAG,renotify:true,vibrate:[300,150,300,150,400],icon:"icon-192.png",badge:"icon-192.png"})).catch(e=>console.warn("Notificação não mostrada",e));
-  }catch(e){console.warn("Notificação indisponível",e)}
-}
-function clearRestNotice(){navigator.serviceWorker?.ready.then(r=>r.getNotifications({tag:REST_TAG})).then(ns=>(ns||[]).forEach(n=>n.close())).catch(e=>console.warn("Não deu para limpar a notificação",e))}
-// asked once, on the first rest (a tap, so Chrome accepts the request); "denied" is respected and never asked again
-function askNotifyOnce(){try{if("Notification" in window&&Notification.permission==="default")Notification.requestPermission().catch(e=>console.warn("Permissão de notificação não pedida",e))}catch(e){console.warn("Notificação indisponível",e)}}
 document.addEventListener("pointerdown",()=>{try{getAudioCtx()}catch(e){console.warn("Áudio indisponível",e)}},{once:true});
 
 // Wake Lock — keeps screen on during workout
@@ -422,7 +410,6 @@ function RestTimer({seconds,next,onClose}){
   const bgTimeoutRef=useRef(null);
   const lastTickRef=useRef(-1);
   const returnRef=useRef(null);
-  const nextRef=useRef(next);nextRef.current=next;
 
   const fireAlarm=useCallback(()=>{
     if(closedRef.current)return;closedRef.current=true;
@@ -434,10 +421,10 @@ function RestTimer({seconds,next,onClose}){
       if(sc&&!due)try{sc.bm.disconnect()}catch(e){console.warn("Sino agendado não cancelado",e)}
       if(!due)playAlarm();setRem(0);onClose();
     }else{
-      // in the background Android blocks starting new sound: the bell scheduled at the start rings; plus a notification
+      // in the background Android blocks starting new sound: the bell scheduled at the start rings
       if(!sc)playAlarm();
-      notifyRestEnd(nextRef.current);setRem(0);
-      const onReturn=()=>{if(!document.hidden){clearRestNotice();document.removeEventListener("visibilitychange",onReturn);returnRef.current=null;onClose()}};
+      setRem(0);
+      const onReturn=()=>{if(!document.hidden){document.removeEventListener("visibilitychange",onReturn);returnRef.current=null;onClose()}};
       returnRef.current=onReturn;document.addEventListener("visibilitychange",onReturn);
     }
   },[onClose]);
@@ -1129,7 +1116,7 @@ function App({session}){
   const[active,setActive]=useState(null);const[timer,setTimer]=useState(null);const[timerOrigin,setTimerOrigin]=useState(null);
   // timer = {sec,id}: a fresh id per rest remounts RestTimer even when the same duration is tapped again
   const timerRef=useRef(null);timerRef.current=timer;
-  const startRest=(idx,sec)=>{askNotifyOnce();setFocusEx(null);setTimerOrigin(idx);setTimer({sec,id:Date.now()+Math.random()})};
+  const startRest=(idx,sec)=>{setFocusEx(null);setTimerOrigin(idx);setTimer({sec,id:Date.now()+Math.random()})};
   const[view,setView]=useState("home");const[hd,setHd]=useState(null);
   const[showPlan,setShowPlan]=useState(false);const[showNewWk,setShowNewWk]=useState(false);const[editEx,setEditEx]=useState(null);
   const[focusEx,setFocusEx]=useState(null);

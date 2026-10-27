@@ -67,11 +67,3 @@ self.addEventListener('fetch', e => {
   }
 });
 
-// Tapping the "Descanso terminado" notification brings the app back (or opens it)
-self.addEventListener('notificationclick', e => {
-  e.notification.close();
-  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
-    const c = cs.find(x => x.url.startsWith(self.registration.scope));
-    return c ? c.focus() : self.clients.openWindow('./');
-  }));
-});

@@ -3,7 +3,7 @@
   "short_name": "RepForge",
   "start_url": "./",
   "scope": "./",
-  "display": "minimal-ui",
+  "display": "standalone",
   "background_color": "#f4f6f9",
   "theme_color": "#f4f6f9",
   "icons": [

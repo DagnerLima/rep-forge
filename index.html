@@ -356,6 +356,10 @@ function playClip(name,draw){
 function playLive(draw){try{const ctx=getAudioCtx();draw(ctx,ctx.destination,ctx.currentTime+0.02)}catch(e){console.warn("Som indisponível",e)}}
 function playAlarm(){playClip("bell",drawBell)}
 function playTick(last){playClip(last?"tickLast":"tick",drawTick(last))}
+// Background bell rings over music that is NOT lowered: ~11 dB louder (measured on the same model), upper
+// partial +6 dB (still far below the 3.3 kHz the user found shrill), struck twice 1.2 s apart like Insight Timer
+const BG_BELL_PARTS=BOWL_PARTS.map(([f,db,dec],i)=>[f,i>=3?db+6:db,dec]);
+const drawBellBg=(ctx,dest,t)=>{const m=ctx.createGain();m.gain.value=0.2;m.connect(dest);[t,t+1.2].forEach(s=>BG_BELL_PARTS.forEach(([f,db,dec])=>partial(ctx,m,s,f,Math.pow(10,db/20),0.035,dec,2.4,0.6)))};
 const BELL_LAG=0.4;// scheduled bell waits a bit so the in-front clip can replace it first (the timer checks every 250 ms)
 // Rest end with the app in the background: a notification (system sound + vibration, works with the screen off)
 // on top of the bell. Android only allows notifications through the service worker registration.
@@ -449,7 +453,7 @@ function RestTimer({seconds,next,onClose}){
     try{const ctx=getAudioCtx(),secs=Math.max(0,(endTimeRef.current-Date.now())/1000),t0=ctx.currentTime;
       const tm=ctx.createGain(),bm=ctx.createGain();tm.connect(ctx.destination);bm.connect(ctx.destination);
       [3,2,1].forEach(k=>{if(secs-k>0.05)drawTick(k===1)(ctx,tm,t0+secs-k)});
-      const at=t0+secs+BELL_LAG;drawBell(ctx,bm,at);sc={ctx,tm,bm,at};schedRef.current=sc;
+      const at=t0+secs+BELL_LAG;drawBellBg(ctx,bm,at);sc={ctx,tm,bm,at};schedRef.current=sc;
     }catch(e){console.warn("Som agendado indisponível — usando o som na hora",e)}
     return()=>{if(!sc)return;try{sc.tm.disconnect();if(sc.ctx.currentTime<sc.at-0.05)sc.bm.disconnect()}catch(e){console.warn("Som agendado não cancelado",e)}if(schedRef.current===sc)schedRef.current=null};
   },[run,epoch]);

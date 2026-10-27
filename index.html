@@ -356,6 +356,7 @@ function playClip(name,draw){
 function playLive(draw){try{const ctx=getAudioCtx();draw(ctx,ctx.destination,ctx.currentTime+0.02)}catch(e){console.warn("Som indisponível",e)}}
 function playAlarm(){playClip("bell",drawBell)}
 function playTick(last){playClip(last?"tickLast":"tick",drawTick(last))}
+const BELL_LAG=0.4;// scheduled bell waits a bit so the in-front clip can replace it first (the timer checks every 250 ms)
 // Rest end with the app in the background: a notification (system sound + vibration, works with the screen off)
 // on top of the bell. Android only allows notifications through the service worker registration.
 const REST_TAG="rf-rest";
@@ -423,10 +424,14 @@ function RestTimer({seconds,next,onClose}){
     if(closedRef.current)return;closedRef.current=true;
     clearInterval(intervalRef.current);clearTimeout(bgTimeoutRef.current);
     try{navigator.vibrate?.([300,150,300,150,400])}catch(e){console.warn("Vibração indisponível",e)}
-    playAlarm();
-    if(!document.hidden){setRem(0);onClose()}
-    else{
-      // in the background: bell + notification now; the sheet closes when the app comes back
+    const sc=schedRef.current,due=!!sc&&sc.ctx.currentTime>=sc.at-0.02;// scheduled bell already sounded?
+    if(!document.hidden){
+      // in front: swap the scheduled bell for the clip (the clip lowers the music); skip if it already rang
+      if(sc&&!due)try{sc.bm.disconnect()}catch(e){console.warn("Sino agendado não cancelado",e)}
+      if(!due)playAlarm();setRem(0);onClose();
+    }else{
+      // in the background Android blocks starting new sound: the bell scheduled at the start rings; plus a notification
+      if(!sc)playAlarm();
       notifyRestEnd(nextRef.current);setRem(0);
       const onReturn=()=>{if(!document.hidden){clearRestNotice();document.removeEventListener("visibilitychange",onReturn);returnRef.current=null;onClose()}};
       returnRef.current=onReturn;document.addEventListener("visibilitychange",onReturn);
@@ -435,13 +440,27 @@ function RestTimer({seconds,next,onClose}){
   // a timer replaced by a new one must not keep a pending "on return" close around
   useEffect(()=>()=>{if(returnRef.current)document.removeEventListener("visibilitychange",returnRef.current)},[]);
 
+  // Ticks and bell are scheduled on the audio clock when the rest starts (app in front, after a tap): Android keeps
+  // sound already scheduled playing in the background, but blocks starting new sound there. Re-done on pause/±15 s.
+  const schedRef=useRef(null);
+  useEffect(()=>{
+    if(!run)return;
+    let sc=null;
+    try{const ctx=getAudioCtx(),secs=Math.max(0,(endTimeRef.current-Date.now())/1000),t0=ctx.currentTime;
+      const tm=ctx.createGain(),bm=ctx.createGain();tm.connect(ctx.destination);bm.connect(ctx.destination);
+      [3,2,1].forEach(k=>{if(secs-k>0.05)drawTick(k===1)(ctx,tm,t0+secs-k)});
+      const at=t0+secs+BELL_LAG;drawBell(ctx,bm,at);sc={ctx,tm,bm,at};schedRef.current=sc;
+    }catch(e){console.warn("Som agendado indisponível — usando o som na hora",e)}
+    return()=>{if(!sc)return;try{sc.tm.disconnect();if(sc.ctx.currentTime<sc.at-0.05)sc.bm.disconnect()}catch(e){console.warn("Som agendado não cancelado",e)}if(schedRef.current===sc)schedRef.current=null};
+  },[run,epoch]);
+
   // Background setTimeout — fires alarm even when tab is hidden
   useEffect(()=>{
     if(!run){clearInterval(intervalRef.current);clearTimeout(bgTimeoutRef.current);return}
     const tick=()=>{
       const r=Math.max(0,Math.ceil((endTimeRef.current-Date.now())/1000));
       setRem(r);
-      if(r>0&&r<=3&&r!==lastTickRef.current){lastTickRef.current=r;playTick(r===1);try{navigator.vibrate?.(15)}catch(e){console.warn("Vibração indisponível",e)}}
+      if(r>0&&r<=3&&r!==lastTickRef.current){lastTickRef.current=r;if(!schedRef.current)playTick(r===1);try{navigator.vibrate?.(15)}catch(e){console.warn("Vibração indisponível",e)}}
       if(r<=0)fireAlarm();
     };
     intervalRef.current=setInterval(tick,250);
